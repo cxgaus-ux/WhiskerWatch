@@ -394,8 +394,9 @@
                 
                 map = L.map('map').setView([KOILADA_LAT, KOILADA_LNG], 15);
                 
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO'
+                // Using OpenStreetMap standard public tiles (No API key required)
+                currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);
 
                 map.on('click', function(e) {
@@ -432,8 +433,8 @@
                     maxZoom: 19, attribution: 'Tiles &copy; Esri'
                 }).addTo(map);
             } else {
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO'
+                currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);
             }
         }

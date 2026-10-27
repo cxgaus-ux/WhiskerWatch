@@ -297,3 +297,110 @@
     </div>
 
     <!-- Application Script Logic -->
+    <script>
+        const safeGetStorage = (key, fallback) => {
+            try { return localStorage.getItem(key) || fallback; } catch(e) { return fallback; }
+        };
+        const safeParseStorage = (key, fallback) => {
+            try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; }
+        };
+
+        const db = {
+            user: safeGetStorage('ww_user', ''),
+            colonies: safeParseStorage('ww_colonies', []),
+            cats: safeParseStorage('ww_cats', []),
+            resightings: safeParseStorage('ww_resightings', []),
+            alerts: safeParseStorage('ww_alerts', []),
+            episodes: safeParseStorage('ww_episodes', []),
+            history: safeParseStorage('ww_history', [])
+        };
+
+        let map = null;
+        let currentTileLayer = null;
+        let colonyMarkers = {};
+        let activeColonyId = null;
+        let currentCatId = null;
+        const KOILADA_LAT = 37.4163;
+        const KOILADA_LNG = 23.1276;
+
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!db.user) {
+                const modal = document.getElementById('welcomeModal');
+                if (modal) modal.style.display = 'flex';
+            } else {
+                const settingsInput = document.getElementById('settingsDisplayName');
+                if (settingsInput) settingsInput.value = db.user;
+            }
+            initMap();
+            renderAll();
+        });
+
+        function saveInitialUser() {
+            const input = document.getElementById('setupDisplayName');
+            const name = input ? input.value.trim() : '';
+            if (!name) { alert('Please enter your display name.'); return; }
+            db.user = name;
+            const settingsInput = document.getElementById('settingsDisplayName');
+            if (settingsInput) settingsInput.value = name;
+            try { localStorage.setItem('ww_user', name); } catch(e) {}
+            const modal = document.getElementById('welcomeModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openSettingsModal() {
+            const input = document.getElementById('settingsDisplayName');
+            if (input) input.value = db.user;
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeSettingsModal() {
+            const input = document.getElementById('settingsDisplayName');
+            db.user = input ? (input.value.trim() || 'Volunteer') : 'Volunteer';
+            try { localStorage.setItem('ww_user', db.user); } catch(e) {}
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-section').forEach(function(el) {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-btn').forEach(function(btn) {
+                btn.classList.remove('bg-amber-600', 'text-white');
+                btn.classList.add('text-stone-600');
+            });
+            
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.classList.add('active');
+            
+            const btn = document.getElementById('nav-' + tabId);
+            if (btn) {
+                btn.classList.add('bg-amber-600', 'text-white');
+                btn.classList.remove('text-stone-600');
+            }
+
+            if (tabId === 'home' && map) {
+                setTimeout(function() { map.invalidateSize(); }, 150);
+            }
+        }
+
+        function initMap() {
+            try {
+                if (typeof L === 'undefined') {
+                    document.getElementById('map').innerHTML = '<div class="p-6 text-center text-red-600 text-xs">Map libraries are loading. Please check your internet connection and refresh the page.</div>';
+                    return;
+                }
+                
+                map = L.map('map').setView([KOILADA_LAT, KOILADA_LNG], 15);
+                
+                // Using OpenStreetMap standard tiles (Free, no keys required, fully reliable)
+                currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                map.on('click', function(e) {
+                    const latInput = document.getElementById('modalColLat');
+                    const lngInput = document.getElementById('modalColLng');
+                    if (latInput) latInput.value = e.latlng.lat;
+                    if

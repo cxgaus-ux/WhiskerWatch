@@ -15,14 +15,6 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Firebase SDKs (Modular v10) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-        window.FirebaseSDK = { initializeApp, getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, enableIndexedDbPersistence, getStorage, ref, uploadBytes, getDownloadURL, deleteObject };
-    </script>
-
     <style>
         .leaflet-container { height: 100%; width: 100%; border-radius: 0.75rem; background: #1e293b; z-index: 1; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -32,8 +24,8 @@
 </head>
 <body class="h-full flex flex-col overflow-hidden select-none">
 
-    <!-- SETUP & DISPLAY NAME MODAL (WW-01-05) -->
-    <div id="setup-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <!-- SETUP & DISPLAY NAME MODAL -->
+    <div id="setup-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div class="text-center mb-6">
                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-400 mb-3 text-2xl">
@@ -43,14 +35,14 @@
                 <p class="text-sm text-slate-400 mt-1">Koilada Stray Cat Census & Welfare Management</p>
             </div>
             <p class="text-xs text-slate-300 mb-4 bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> <strong>Shared Dataset Notice:</strong> Authorized contributors share one unified dataset. Please enter your display name for action attribution.
+                <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> <strong>Shared Dataset Notice:</strong> Contributors share a unified local-first dataset. Please enter your display name for action attribution.
             </p>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1">Your Display Name *</label>
-                    <input type="text" id="setup-display-name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500" placeholder="e.g., Maria K.">
+                    <input type="text" id="setup-display-name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 text-slate-100" placeholder="e.g., Maria K.">
                 </div>
-                <button onclick="window.app.completeSetup()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-lg shadow-emerald-900/20">
+                <button onclick="window.app.completeSetup()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-lg">
                     Start Contributing
                 </button>
             </div>
@@ -74,12 +66,12 @@
 
             <!-- Sync Status & Quick Actions -->
             <div class="flex items-center space-x-2">
-                <div id="sync-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px]">
-                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span id="sync-text" class="text-slate-300">Local Only</span>
+                <div id="sync-badge" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px]">
+                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span id="sync-text" class="text-slate-300">Saved Locally</span>
                 </div>
                 
-                <!-- PHOTO-FIRST ADD CAT (Home Action WW-05-09) -->
+                <!-- PHOTO-FIRST ADD CAT BUTTON -->
                 <button onclick="window.app.triggerPhotoFirstAddCat()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 shadow-sm transition-colors">
                     <i class="fa-solid fa-camera"></i>
                     <span class="hidden md:inline">Add Cat — Photo</span>
@@ -91,13 +83,13 @@
             </div>
         </header>
 
-        <!-- CONTENT AREA (DYNAMIC SCREENS) -->
+        <!-- CONTENT AREA -->
         <main id="main-content" class="flex-1 overflow-y-auto relative bg-slate-950">
-            <!-- Injected Screen Views Render Here -->
+            <!-- Dynamic Screens Render Here -->
         </main>
 
-        <!-- BOTTOM NAVIGATION BAR (WW-04-01 / WW-04-02) -->
-        <nav class="bg-slate-900 border-t border-slate-800 grid grid-cols-4 py-2 px-3 shrink-0 text-center">
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="bg-slate-900 border-t border-slate-800 grid grid-cols-4 py-2 px-3 shrink-0 text-center z-20">
             <button onclick="window.app.navigateTo('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center text-emerald-400">
                 <i class="fa-solid fa-map text-base mb-0.5"></i>
                 <span class="text-[10px] font-medium">Home Map</span>
@@ -117,7 +109,7 @@
         </nav>
     </div>
 
-    <!-- HIDDEN FILE INPUT FOR PHOTO CAPTURE / UPLOAD -->
+    <!-- HIDDEN PHOTO INPUT -->
     <input type="file" id="global-photo-input" accept="image/*" capture="environment" class="hidden" onchange="window.app.handleGlobalPhotoSelected(event)">
 
     <!-- APPLICATION CONTROLLER SCRIPT -->
@@ -135,14 +127,16 @@
                     alerts: JSON.parse(localStorage.getItem('ww_alerts') || '[]'),
                     careEpisodes: JSON.parse(localStorage.getItem('ww_care') || '[]'),
                     history: JSON.parse(localStorage.getItem('ww_history') || '[]'),
-                    settings: JSON.parse(localStorage.getItem('ww_settings') || '{"radius":50}'),
-                    syncStatus: 'local',
-                    pendingCount: 0
+                    settings: JSON.parse(localStorage.getItem('ww_settings') || '{"radius":50}')
                 };
                 
-                this.koiladaCoords = [37.3833, 23.1167];
+                // Exact Koilada, Peloponnese, Greece coordinates
+                this.koiladaCoords = [37.4134, 23.1256];
                 this.mapInstance = null;
+                this.currentTileLayer = null;
+                this.mapLayerType = 'street'; // 'street' or 'satellite'
                 this.activePhotoFirstFile = null;
+                this.isAddingColonyMode = false;
             }
 
             init() {
@@ -151,7 +145,6 @@
                 } else {
                     this.render();
                 }
-                this.initSyncEngine();
             }
 
             completeSetup() {
@@ -175,35 +168,6 @@
                 localStorage.setItem('ww_care', JSON.stringify(this.state.careEpisodes));
                 localStorage.setItem('ww_history', JSON.stringify(this.state.history));
                 localStorage.setItem('ww_settings', JSON.stringify(this.state.settings));
-                this.updateSyncBadge('local', 0);
-            }
-
-            updateSyncBadge(status, count) {
-                this.state.syncStatus = status;
-                this.state.pendingCount = count;
-                const dot = document.getElementById('sync-dot');
-                const text = document.getElementById('sync-text');
-                if (!dot || !text) return;
-
-                if (status === 'local') {
-                    dot.className = "w-2 h-2 rounded-full bg-amber-400";
-                    text.innerText = "Saved Locally";
-                } else if (status === 'syncing') {
-                    dot.className = "w-2 h-2 rounded-full bg-sky-400 animate-pulse";
-                    text.innerText = "Syncing...";
-                } else if (status === 'synced') {
-                    dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-                    text.innerText = "Synced";
-                } else if (status === 'error') {
-                    dot.className = "w-2 h-2 rounded-full bg-rose-500";
-                    text.innerText = "Sync Error";
-                }
-            }
-
-            initSyncEngine() {
-                setTimeout(() => {
-                    this.updateSyncBadge('synced', 0);
-                }, 1500);
             }
 
             logHistory(actionType, recordId, details) {
@@ -223,6 +187,7 @@
                 this.state.currentScreen = screen;
                 if (colonyId !== null) this.state.selectedColonyId = colonyId;
                 if (catId !== null) this.state.selectedCatId = catId;
+                this.isAddingColonyMode = false;
                 
                 document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-emerald-400', 'text-slate-400'));
                 const activeNav = document.getElementById('nav-' + (screen === 'profile' || screen === 'colony-profile' ? (screen === 'profile' ? 'grid' : 'colonies') : screen));
@@ -262,662 +227,11 @@
                 }
             }
 
+            // ==========================================
+            // HOME SCREEN & INTERACTIVE MAP (WW-05)
+            // ==========================================
             renderHomeScreen() {
                 return `
-                    <div class="h-full flex flex-col p-4 space-y-3">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <div class="h-full flex flex-col p-3 space-y-2">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-800">
                             <div>
-                                <h2 class="text-base font-bold text-slate-200">Koilada Colony Map</h2>
-                                <p class="text-xs text-slate-400">Interactive census map centred on Koilada, Peloponnese, Greece.</p>
-                            </div>
-                            <div class="flex items-center space-x-2 w-full sm:w-auto">
-                                <button onclick="window.app.promptAddColony()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
-                                    <i class="fa-solid fa-plus text-emerald-400 mr-1"></i> Add Colony
-                                </button>
-                                <button onclick="window.app.exportDataset()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
-                                    <i class="fa-solid fa-download text-sky-400 mr-1"></i> Export Data
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex-1 relative min-h-[350px]">
-                            <div id="map" class="absolute inset-0 shadow-lg border border-slate-800"></div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            initHomeMap() {
-                setTimeout(() => {
-                    if (this.mapInstance) {
-                        this.mapInstance.remove();
-                    }
-
-                    this.mapInstance = L.map('map').setView(this.koiladaCoords, 15);
-
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '&copy; OpenStreetMap contributors'
-                    }).addTo(this.mapInstance);
-
-                    this.state.colonies.forEach(colony => {
-                        if (!colony.lat || !colony.lng) return;
-                        
-                        const catCount = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived).length;
-                        const markerHtml = `<div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white shadow-md flex items-center justify-center text-white font-bold text-xs"><i class="fa-solid fa-paw"></i></div>`;
-                        const customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
-
-                        const marker = L.marker([colony.lat, colony.lng], { icon: customIcon }).addTo(this.mapInstance);
-                        
-                        const popupContent = `
-                            <div class="p-2 text-slate-900 max-w-xs">
-                                <h3 class="font-bold text-sm mb-1">${colony.name}</h3>
-                                <p class="text-xs text-slate-600 mb-2">${colony.notes || 'No location notes.'}</p>
-                                <div class="text-xs font-semibold mb-3 text-emerald-700">Recorded Cats: ${catCount}</div>
-                                <div class="flex space-x-2">
-                                    <button onclick="window.app.navigateTo('colony-profile', '${colony.id}')" class="bg-emerald-600 text-white px-2.5 py-1 rounded text-xs font-medium">Colony Profile</button>
-                                    <button onclick="window.app.navigateTo('grid', '${colony.id}')" class="bg-slate-800 text-white px-2.5 py-1 rounded text-xs font-medium">Cat Grid</button>
-                                </div>
-                            </div>
-                        `;
-                        marker.bindPopup(popupContent);
-                    });
-                    this.mapInstance.invalidateSize();
-                }, 100);
-            }
-
-            initCatMap() {
-                setTimeout(() => {
-                    const catMapEl = document.getElementById('cat-map');
-                    if (!catMapEl) return;
-                    const catMap = L.map('cat-map').setView(this.koiladaCoords, 16);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(catMap);
-                    
-                    const cat = this.state.cats.find(c => c.id === this.state.selectedCatId);
-                    if (cat) {
-                        const resights = this.state.resightings.filter(r => r.catId === cat.id && r.lat && r.lng);
-                        resights.forEach(r => {
-                            L.circleMarker([r.lat, r.lng], { radius: 6, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 0.8 }).addTo(catMap);
-                        });
-                    }
-                    catMap.invalidateSize();
-                }, 100);
-            }
-
-            promptAddColony() {
-                const name = prompt("Enter Colony Name:");
-                if (!name) return;
-                const notes = prompt("Enter location notes (optional):") || "";
-                
-                const newColony = {
-                    id: 'col_' + Date.now(),
-                    name,
-                    notes,
-                    lat: this.koiladaCoords[0] + (Math.random() - 0.5) * 0.01,
-                    lng: this.koiladaCoords[1] + (Math.random() - 0.5) * 0.01,
-                    radius: 50,
-                    caretakers: [this.state.displayName],
-                    created: new Date().toISOString()
-                };
-
-                this.state.colonies.push(newColony);
-                this.logHistory('Create Colony', newColony.id, `Created colony: ${name}`);
-                this.saveLocal();
-                this.render();
-            }
-
-            triggerPhotoFirstAddCat() {
-                document.getElementById('global-photo-input').click();
-            }
-
-            handleGlobalPhotoSelected(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.activePhotoFirstFile = e.target.result;
-                    this.showColonySelectionForPhoto();
-                };
-                reader.readAsDataURL(file);
-                event.target.value = '';
-            }
-
-            showColonySelectionForPhoto() {
-                if (this.state.colonies.length === 0) {
-                    alert('Please create at least one colony on the map before registering cats.');
-                    this.promptAddColony();
-                    return;
-                }
-
-                let colonyListText = this.state.colonies.map((c, idx) => `${idx + 1}. ${c.name}`).join('\n');
-                let selection = prompt(`Select destination colony by number:\n\n${colonyListText}\n\nType 'new' to create a new colony.`);
-                
-                let targetColonyId = null;
-                if (selection === 'new') {
-                    const name = prompt("Enter new Colony Name:");
-                    if (!name) return;
-                    const newColony = {
-                        id: 'col_' + Date.now(),
-                        name,
-                        notes: 'Created via Photo-First registration',
-                        lat: this.koiladaCoords[0],
-                        lng: this.koiladaCoords[1],
-                        radius: 50,
-                        caretakers: [this.state.displayName],
-                        created: new Date().toISOString()
-                    };
-                    this.state.colonies.push(newColony);
-                    targetColonyId = newColony.id;
-                } else {
-                    const idx = parseInt(selection) - 1;
-                    if (isNaN(idx) || !this.state.colonies[idx]) {
-                        alert('Invalid colony selection.');
-                        return;
-                    }
-                    targetColonyId = this.state.colonies[idx].id;
-                }
-
-                this.state.selectedColonyId = targetColonyId;
-                this.state.selectedCatId = null;
-                this.navigateTo('profile');
-            }
-
-            renderColoniesScreen() {
-                return `
-                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto">
-                        <div class="flex items-center justify-between shrink-0">
-                            <div>
-                                <h2 class="text-base font-bold text-slate-200">Colony Management Summaries</h2>
-                                <p class="text-xs text-slate-400">Review colony welfare distribution, priority borders, and statistics.</p>
-                            </div>
-                            <button onclick="window.app.promptAddColony()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
-                                <i class="fa-solid fa-plus mr-1"></i> Add Colony
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${this.state.colonies.length === 0 ? `
-                                <div class="col-span-full text-center py-12 text-slate-500 text-sm">
-                                    No colonies registered yet. Use "Add Colony" to begin.
-                                </div>
-                            ` : this.state.colonies.map(colony => {
-                                const cats = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived);
-                                const sterilisedCount = cats.filter(c => c.sterilisation === 'Sterilised').length;
-                                const sterilisationPct = cats.length ? Math.round((sterilisedCount / cats.length) * 100) : 0;
-                                const emaciatedCount = cats.filter(c => c.bodyCondition === 'Emaciated').length;
-                                const urgentAlerts = this.state.alerts.filter(a => cats.some(c => c.id === a.catId) && a.status !== 'Resolved').length;
-                                
-                                let borderClass = 'border-emerald-600/40';
-                                if (urgentAlerts > 0) borderClass = 'border-rose-500 shadow-rose-950/20 shadow-lg';
-                                else if (emaciatedCount > 0 || sterilisationPct < 50) borderClass = 'border-amber-500';
-
-                                return `
-                                    <div class="bg-slate-900 border ${borderClass} rounded-xl p-4 flex flex-col justify-between space-y-3">
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <h3 class="font-bold text-sm text-slate-200">${colony.name}</h3>
-                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">${cats.length} Cats</span>
-                                            </div>
-                                            <p class="text-xs text-slate-400 mb-3">${colony.notes || 'No location notes provided.'}</p>
-                                            
-                                            <div class="grid grid-cols-2 gap-2 text-xs bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
-                                                <div><span class="text-slate-400">Sterilisation:</span> <strong class="text-slate-200">${sterilisationPct}%</strong></div>
-                                                <div><span class="text-slate-400">Urgent Alerts:</span> <strong class="text-${urgentAlerts > 0 ? 'rose-400' : 'emerald-400'}">${urgentAlerts}</strong></div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center space-x-2 pt-2 border-t border-slate-800">
-                                            <button onclick="window.app.navigateTo('colony-profile', '${colony.id}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs py-1.5 rounded-lg font-medium transition-colors text-center">Colony Profile</button>
-                                            <button onclick="window.app.navigateTo('grid', '${colony.id}')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded-lg font-medium transition-colors text-center">Cat Grid</button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderCatGridScreen() {
-                const colony = this.state.colonies.find(c => c.id === this.state.selectedColonyId) || this.state.colonies[0];
-                if (!colony) {
-                    return `
-                        <div class="h-full flex flex-col items-center justify-center p-6 text-center">
-                            <p class="text-slate-400 text-sm mb-3">No colonies available to display Cat Grid.</p>
-                            <button onclick="window.app.promptAddColony()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium">Create First Colony</button>
-                        </div>
-                    `;
-                }
-
-                const colonyCats = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived);
-
-                return `
-                    <div class="h-full flex flex-col p-4 space-y-3 overflow-y-auto">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <h2 class="text-base font-bold text-slate-200">${colony.name} — Cat Grid</h2>
-                                    <span class="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-medium">${colonyCats.length} cats</span>
-                                </div>
-                                <p class="text-xs text-slate-400">Quick identification and re-sighting log.</p>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="window.app.navigateTo('colony-profile', '${colony.id}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium">Colony Profile</button>
-                                <button onclick="window.app.openCatProfile(null, '${colony.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg font-medium text-white shadow-sm">
-                                    <i class="fa-solid fa-plus mr-1"></i> Register Cat
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            ${colonyCats.length === 0 ? `
-                                <div class="col-span-full text-center py-12 text-slate-500 text-sm bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
-                                    No cats registered in this colony yet. Tap "Register Cat" above.
-                                </div>
-                            ` : colonyCats.map(cat => {
-                                const resightCount = this.state.resightings.filter(r => r.catId === cat.id).length;
-                                const alert = this.state.alerts.find(a => a.catId === cat.id && a.status !== 'Resolved');
-                                
-                                let cardBorder = 'border-slate-800';
-                                if (alert) cardBorder = 'border-rose-500 shadow-lg shadow-rose-950/30';
-                                else if (cat.bodyCondition === 'Thin' || cat.health === 'Unwell' || cat.sterilisation === 'Unsterilised') cardBorder = 'border-amber-500/60';
-                                else if (cat.health === 'Healthy' && cat.sterilisation === 'Sterilised') cardBorder = 'border-emerald-500/60';
-
-                                return `
-                                    <div onclick="window.app.openCatProfile('${cat.id}')" class="bg-slate-900 border ${cardBorder} rounded-xl p-3 flex flex-col justify-between cursor-pointer hover:border-slate-600 transition-all group">
-                                        <div>
-                                            <div class="aspect-square rounded-lg bg-slate-800 mb-2 overflow-hidden relative flex items-center justify-center text-slate-600">
-                                                ${cat.photos && cat.photos.length > 0 ? `
-                                                    <img src="${cat.photos[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                                ` : `
-                                                    <i class="fa-solid fa-cat text-2xl"></i>
-                                                `}
-                                                <div class="absolute bottom-1 right-1 bg-slate-900/80 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded text-slate-300 font-medium">
-                                                    ${resightCount} re-sight
-                                                </div>
-                                            </div>
-                                            <h4 class="font-bold text-xs text-slate-200 truncate">${cat.name || 'Unnamed Cat'}</h4>
-                                            <p class="text-[10px] text-slate-400 truncate mb-2">${cat.description || cat.markings || 'No markings noted.'}</p>
-                                        </div>
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[10px]">
-                                            <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">${cat.sterilisation || 'Unknown'}</span>
-                                            <span class="text-emerald-400 font-medium"><i class="fa-solid fa-chevron-right text-[9px]"></i></span>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            openCatProfile(catId = null, colonyId = null) {
-                this.state.selectedCatId = catId;
-                if (colonyId) this.state.selectedColonyId = colonyId;
-                this.navigateTo('profile');
-            }
-
-            renderCatProfileScreen() {
-                const cat = this.state.cats.find(c => c.id === this.state.selectedCatId);
-                const isNew = !cat;
-                const colonyId = this.state.selectedColonyId || (this.state.colonies[0] ? this.state.colonies[0].id : null);
-                const catResightings = isNew ? [] : this.state.resightings.filter(r => r.catId === cat.id);
-
-                return `
-                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto max-w-4xl mx-auto w-full">
-                        <div class="flex items-center justify-between shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-800">
-                            <div class="flex items-center space-x-2">
-                                <button onclick="window.app.navigateTo('grid')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </button>
-                                <h2 class="text-sm font-bold text-slate-200">${isNew ? 'Register New Cat' : (cat.name || 'Cat Profile')}</h2>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                ${!isNew ? `
-                                    <button onclick="window.app.recordQuickResighting('${cat.id}')" class="bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-medium">
-                                        <i class="fa-solid fa-location-dot mr-1"></i> Re-sighting
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="md:col-span-2 space-y-4">
-                                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
-                                    <div class="aspect-video bg-slate-950 rounded-lg border border-slate-800 overflow-hidden relative flex items-center justify-center">
-                                        ${!isNew && cat.photos && cat.photos.length > 0 ? `
-                                            <img id="active-profile-photo" src="${cat.photos[0]}" class="w-full h-full object-cover">
-                                        ` : this.activePhotoFirstFile ? `
-                                            <img id="active-profile-photo" src="${this.activePhotoFirstFile}" class="w-full h-full object-cover">
-                                        ` : `
-                                            <div class="text-center p-6 text-slate-500">
-                                                <i class="fa-solid fa-camera text-3xl mb-2"></i>
-                                                <p class="text-xs">No photos attached yet. Take or upload photo.</p>
-                                            </div>
-                                        `}
-                                        <button onclick="document.getElementById('cat-photo-upload').click()" class="absolute bottom-3 right-3 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg flex items-center space-x-1.5">
-                                            <i class="fa-solid fa-camera"></i>
-                                            <span>Add Photo</span>
-                                        </button>
-                                        <input type="file" id="cat-photo-upload" accept="image/*" class="hidden" onchange="window.app.handleCatPhotoAdded(event)">
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                        <div>
-                                            <label class="block text-slate-400 mb-1">Cat Name</label>
-                                            <input type="text" id="cat-input-name" value="${isNew ? '' : (cat.name || '')}" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200" placeholder="e.g., Mitzis">
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-400 mb-1">Colony Assignment *</label>
-                                            <select id="cat-input-colony" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
-                                                ${this.state.colonies.map(c => `<option value="${c.id}" ${(!isNew && cat.colonyId === c.id) || (isNew && colonyId === c.id) ? 'selected' : ''}>${c.name}</option>`).join('')}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-400 mb-1">Sex</label>
-                                            <select id="cat-input-sex" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
-                                                <option value="Unknown" ${!isNew && cat.sex === 'Unknown' ? 'selected' : ''}>Unknown</option>
-                                                <option value="Male" ${!isNew && cat.sex === 'Male' ? 'selected' : ''}>Male</option>
-                                                <option value="Female" ${!isNew && cat.sex === 'Female' ? 'selected' : ''}>Female</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-400 mb-1">Sterilisation Status</label>
-                                            <select id="cat-input-sterilisation" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
-                                                <option value="Unknown" ${!isNew && cat.sterilisation === 'Unknown' ? 'selected' : ''}>Unknown</option>
-                                                <option value="Sterilised" ${!isNew && cat.sterilisation === 'Sterilised' ? 'selected' : ''}>Sterilised</option>
-                                                <option value="Unsterilised" ${!isNew && cat.sterilisation === 'Unsterilised' ? 'selected' : ''}>Unsterilised</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-400 mb-1">Health Condition</label>
-                                            <select id="cat-input-health" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
-                                                <option value="Healthy" ${!isNew && cat.health === 'Healthy' ? 'selected' : ''}>Healthy</option>
-                                                <option value="Unwell" ${!isNew && cat.health === 'Unwell' ? 'selected' : ''}>Unwell</option>
-                                                <option value="Critically ill/injured" ${!isNew && cat.health === 'Critically ill/injured' ? 'selected' : ''}>Critically ill/injured (Urgent Alert)</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-400 mb-1">Body Condition</label>
-                                            <select id="cat-input-body" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
-                                                <option value="Good" ${!isNew && cat.bodyCondition === 'Good' ? 'selected' : ''}>Good</option>
-                                                <option value="Thin" ${!isNew && cat.bodyCondition === 'Thin' ? 'selected' : ''}>Thin</option>
-                                                <option value="Emaciated" ${!isNew && cat.bodyCondition === 'Emaciated' ? 'selected' : ''}>Emaciated (Urgent Alert)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-slate-400 mb-1 text-xs">Identifying Markings & Description</label>
-                                        <textarea id="cat-input-desc" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" placeholder="Coat pattern, ear-tip status, color, distinguishing features...">${isNew ? '' : (cat.description || '')}</textarea>
-                                    </div>
-
-                                    <div class="flex justify-end space-x-2 pt-2">
-                                        <button onclick="window.app.navigateTo('grid')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg font-medium">Cancel</button>
-                                        <button onclick="window.app.saveCatProfile('${isNew ? '' : cat.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-5 py-2 rounded-lg font-medium shadow-md">Save Cat Profile</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col space-y-3">
-                                    <h3 class="font-bold text-xs text-slate-200 flex items-center justify-between">
-                                        <span><i class="fa-solid fa-map-location-dot text-emerald-400 mr-1.5"></i> Cat Profile GPS Map</span>
-                                        <span class="text-[10px] text-slate-400 font-normal">Observed Territory</span>
-                                    </h3>
-                                    <div class="h-48 relative rounded-lg overflow-hidden border border-slate-800">
-                                        <div id="cat-map" class="absolute inset-0"></div>
-                                    </div>
-                                    <p class="text-[11px] text-slate-400">Displays verified photo GPS coordinates and on-site re-sighting dots for this cat.</p>
-                                </div>
-
-                                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-                                    <h3 class="font-bold text-xs text-slate-200 flex items-center justify-between">
-                                        <span><i class="fa-solid fa-clock-rotate-left text-sky-400 mr-1.5"></i> Re-sighting History</span>
-                                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">${catResightings.length} total</span>
-                                    </h3>
-                                    <div class="space-y-2 max-h-40 overflow-y-auto text-xs">
-                                        ${catResightings.length === 0 ? `
-                                            <p class="text-slate-500 text-center py-4">No re-sightings recorded yet.</p>
-                                        ` : catResightings.map(r => `
-                                            <div class="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
-                                                <div class="flex justify-between text-[11px] mb-1">
-                                                    <strong class="text-slate-300">${r.actor}</strong>
-                                                    <span class="text-slate-400">${new Date(r.timestamp).toLocaleDateString()}</span>
-                                                </div>
-                                                <p class="text-slate-400 text-[11px]">${r.notes || 'Routine sighting recorded.'}</p>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            handleCatPhotoAdded(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.activePhotoFirstFile = e.target.result;
-                    const imgEl = document.getElementById('active-profile-photo');
-                    if (imgEl) imgEl.src = this.activePhotoFirstFile;
-                    else this.render();
-                };
-                reader.readAsDataURL(file);
-            }
-
-            saveCatProfile(catId) {
-                const name = document.getElementById('cat-input-name').value.trim();
-                const colonyId = document.getElementById('cat-input-colony').value;
-                const sex = document.getElementById('cat-input-sex').value;
-                const sterilisation = document.getElementById('cat-input-sterilisation').value;
-                const health = document.getElementById('cat-input-health').value;
-                const bodyCondition = document.getElementById('cat-input-body').value;
-                const description = document.getElementById('cat-input-desc').value.trim();
-
-                const isNew = !catId;
-                const targetId = isNew ? 'cat_' + Date.now() : catId;
-
-                let photos = isNew ? [] : (this.state.cats.find(c => c.id === catId)?.photos || []);
-                if (this.activePhotoFirstFile) {
-                    photos.unshift(this.activePhotoFirstFile);
-                    this.activePhotoFirstFile = null;
-                }
-
-                if (isNew && photos.length === 0 && !description) {
-                    alert('Please provide at least one photo or identifying description.');
-                    return;
-                }
-
-                const catData = {
-                    id: targetId,
-                    colonyId,
-                    name,
-                    sex,
-                    sterilisation,
-                    health,
-                    bodyCondition,
-                    description,
-                    photos,
-                    updated: new Date().toISOString()
-                };
-
-                if (isNew) {
-                    catData.created = new Date().toISOString();
-                    this.state.cats.push(catData);
-                    this.logHistory('Create Cat', targetId, `Registered cat: ${name || 'Unnamed'}`);
-                } else {
-                    const idx = this.state.cats.findIndex(c => c.id === catId);
-                    if (idx !== -1) {
-                        this.state.cats[idx] = catData;
-                        this.logHistory('Update Cat', targetId, `Updated profile for cat: ${name || 'Unnamed'}`);
-                    }
-                }
-
-                if (health === 'Critically ill/injured' || bodyCondition === 'Emaciated') {
-                    const existingAlert = this.state.alerts.find(a => a.catId === targetId && a.status !== 'Resolved');
-                    if (!existingAlert) {
-                        this.state.alerts.push({
-                            id: 'alt_' + Date.now(),
-                            catId: targetId,
-                            trigger: `${health} / ${bodyCondition}`,
-                            status: 'Reported',
-                            timestamp: new Date().toISOString()
-                        });
-                    }
-                }
-
-                this.saveLocal();
-                this.navigateTo('grid', colonyId);
-            }
-
-            recordQuickResighting(catId) {
-                const confirmLoc = confirm("Are you currently at the location where you saw this cat?");
-                let lat = null, lng = null;
-                if (confirmLoc && navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(pos => {
-                        lat = pos.coords.latitude;
-                        lng = pos.coords.longitude;
-                        this.finishResighting(catId, lat, lng);
-                    }, () => {
-                        this.finishResighting(catId, null, null);
-                    });
-                } else {
-                    this.finishResighting(catId, null, null);
-                }
-            }
-
-            finishResighting(catId, lat, lng) {
-                const notes = prompt("Enter re-sighting notes (optional):") || "";
-                const resighting = {
-                    id: 'res_' + Date.now(),
-                    catId,
-                    actor: this.state.displayName,
-                    timestamp: new Date().toISOString(),
-                    notes,
-                    lat,
-                    lng
-                };
-                this.state.resightings.push(resighting);
-                this.logHistory('Re-sighting', catId, `Recorded re-sighting by ${this.state.displayName}`);
-                this.saveLocal();
-                alert('Re-sighting recorded successfully.');
-                this.render();
-            }
-
-            renderColonyProfileScreen() {
-                const colony = this.state.colonies.find(c => c.id === this.state.selectedColonyId) || this.state.colonies[0];
-                if (!colony) return `<div class="p-6 text-center text-slate-400">No colony selected.</div>`;
-                const cats = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived);
-
-                return `
-                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto max-w-4xl mx-auto w-full">
-                        <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-                            <div class="flex items-center space-x-2">
-                                <button onclick="window.app.navigateTo('colonies')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </button>
-                                <h2 class="text-sm font-bold text-slate-200">${colony.name} — Colony Profile</h2>
-                            </div>
-                            <button onclick="window.app.navigateTo('grid', '${colony.id}')" class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium">Open Cat Grid</button>
-                        </div>
-                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-                            <h3 class="font-bold text-sm text-slate-200">Colony Statistics & Summary</h3>
-                            <p class="text-xs text-slate-400">${colony.notes || 'No location notes.'}</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                                    <div class="text-lg font-bold text-emerald-400">${cats.length}</div>
-                                    <div class="text-[11px] text-slate-400">Total Recorded Cats</div>
-                                </div>
-                                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                                    <div class="text-lg font-bold text-sky-400">${cats.filter(c => c.sterilisation === 'Sterilised').length}</div>
-                                    <div class="text-[11px] text-slate-400">Sterilised</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderInsightsScreen() {
-                const totalCats = this.state.cats.filter(c => !c.archived).length;
-                const sterilised = this.state.cats.filter(c => c.sterilisation === 'Sterilised' && !c.archived).length;
-                const rate = totalCats ? Math.round((sterilised / totalCats) * 100) : 0;
-
-                return `
-                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto max-w-4xl mx-auto w-full">
-                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                            <h2 class="text-sm font-bold text-slate-200">Population Insights & Area Dashboard</h2>
-                            <p class="text-xs text-slate-400">Koilada-wide welfare metrics and management priorities.</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-emerald-400 mb-1">${totalCats}</div>
-                                <div class="text-xs text-slate-400">Total Recorded Cats</div>
-                            </div>
-                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-sky-400 mb-1">${rate}%</div>
-                                <div class="text-xs text-slate-400">Area Sterilisation Rate</div>
-                            </div>
-                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-amber-400 mb-1">${this.state.colonies.length}</div>
-                                <div class="text-xs text-slate-400">Active Colonies</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderSettingsScreen() {
-                return `
-                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto max-w-md mx-auto w-full">
-                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                            <h2 class="text-sm font-bold text-slate-200">Settings & Attribution</h2>
-                            <p class="text-xs text-slate-400">Manage display name and local configuration.</p>
-                        </div>
-                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1">Display Name</label>
-                                <input type="text" id="settings-display-name" value="${this.state.displayName}" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200">
-                            </div>
-                            <button onclick="window.app.saveSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 rounded-lg font-medium">Save Settings</button>
-                        </div>
-                    </div>
-                `;
-            }
-
-            saveSettings() {
-                const val = document.getElementById('settings-display-name').value.trim();
-                if (!val) return;
-                this.state.displayName = val;
-                localStorage.setItem('ww_display_name', val);
-                alert('Settings updated successfully.');
-                this.navigateTo('home');
-            }
-
-            openSettings() {
-                this.navigateTo('settings');
-            }
-
-            exportDataset() {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2));
-                const dlAnchor = document.createElement('a');
-                dlAnchor.setAttribute("href", dataStr);
-                dlAnchor.setAttribute("download", "whiskerwatch_v3_export.json");
-                document.body.appendChild(dlAnchor);
-                dlAnchor.click();
-                dlAnchor.remove();
-            }
-        }
-
-        // Initialize globally and start application safely regardless of document load timing
-        window.app = new WhiskerWatchApp();
-        if (document.readyState === 'loading') {
-            window.addEventListener('DOMContentLoaded', () => window.app.init());
-        } else {
-            window.app.init();
-        }
-    </script>
-</body>
-</html>

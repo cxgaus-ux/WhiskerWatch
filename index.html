@@ -83,6 +83,10 @@ Community Cat Welfare Management System
 Add Colony
 </button>
 
+<button id="exportBtn">
+Export Data
+</button>
+
 <button id="clearBtn">
 Clear Test Data
 </button>
@@ -188,6 +192,13 @@ document
 
 });
 
+document
+.getElementById("exportBtn")
+.addEventListener(
+    "click",
+    exportData
+);
+
 map.on("click", e=>{
 
     if(!addingColony){
@@ -278,18 +289,10 @@ function renderColonyList(){
 
             <p>${colony.notes || ""}</p>
 
-            <p>Radius:
-            ${colony.radius || 50}m</p>
-
-            <button
-                onclick="editColony(${colony.id})">
-                Edit
-            </button>
-
-            <button
-                onclick="deleteColony(${colony.id})">
-                Delete
-            </button>
+            <p>
+              Radius:
+              ${colony.radius || 50}m
+            </p>
         `;
 
         colonyList.appendChild(card);
@@ -298,76 +301,34 @@ function renderColonyList(){
 
 }
 
-function editColony(id){
+function exportData(){
 
     const data =
-        JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-            || "[]"
+        localStorage.getItem(STORAGE_KEY);
+
+    const blob =
+        new Blob(
+            [data || "[]"],
+            {
+                type:
+                "application/json"
+            }
         );
 
-    const colony =
-        data.find(c => c.id === id);
+    const url =
+        URL.createObjectURL(blob);
 
-    if(!colony){
-        return;
-    }
+    const link =
+        document.createElement("a");
 
-    const newName =
-        prompt(
-            "Colony name:",
-            colony.name
-        );
+    link.href = url;
 
-    if(!newName){
-        return;
-    }
+    link.download =
+        "whiskerwatch-colonies.json";
 
-    const newNotes =
-        prompt(
-            "Location notes:",
-            colony.notes
-        ) || "";
+    link.click();
 
-    colony.name = newName;
-    colony.notes = newNotes;
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(data)
-    );
-
-    location.reload();
-
-}
-
-function deleteColony(id){
-
-    if(
-        !confirm(
-            "Delete this colony?"
-        )
-    ){
-        return;
-    }
-
-    const data =
-        JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-            || "[]"
-        );
-
-    const updated =
-        data.filter(
-            c => c.id !== id
-        );
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated)
-    );
-
-    location.reload();
+    URL.revokeObjectURL(url);
 
 }
 

@@ -42,7 +42,7 @@
                     <label class="block text-xs font-medium text-slate-300 mb-1">Your Display Name *</label>
                     <input type="text" id="setup-display-name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 text-slate-100" placeholder="e.g., Maria K.">
                 </div>
-                <button onclick="window.app.completeSetup()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-lg">
+                <button id="btn-complete-setup" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-lg">
                     Start Contributing
                 </button>
             </div>
@@ -72,12 +72,12 @@
                 </div>
                 
                 <!-- PHOTO-FIRST ADD CAT BUTTON -->
-                <button onclick="window.app.triggerPhotoFirstAddCat()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 shadow-sm transition-colors">
+                <button id="btn-photo-first" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 shadow-sm transition-colors">
                     <i class="fa-solid fa-camera"></i>
                     <span class="hidden md:inline">Add Cat — Photo</span>
                 </button>
                 
-                <button onclick="window.app.openSettings()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm transition-colors" title="Settings">
+                <button id="btn-settings" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm transition-colors" title="Settings">
                     <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
@@ -90,19 +90,19 @@
 
         <!-- BOTTOM NAVIGATION BAR -->
         <nav class="bg-slate-900 border-t border-slate-800 grid grid-cols-4 py-2 px-3 shrink-0 text-center z-20">
-            <button onclick="window.app.navigateTo('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center text-emerald-400">
+            <button data-screen="home" id="nav-home" class="nav-btn flex flex-col items-center justify-center text-emerald-400">
                 <i class="fa-solid fa-map text-base mb-0.5"></i>
                 <span class="text-[10px] font-medium">Home Map</span>
             </button>
-            <button onclick="window.app.navigateTo('colonies')" id="nav-colonies" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
+            <button data-screen="colonies" id="nav-colonies" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
                 <i class="fa-solid fa-layer-group text-base mb-0.5"></i>
                 <span class="text-[10px] font-medium">Colonies</span>
             </button>
-            <button onclick="window.app.navigateTo('grid')" id="nav-grid" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
+            <button data-screen="grid" id="nav-grid" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
                 <i class="fa-solid fa-grid-2 text-base mb-0.5"></i>
                 <span class="text-[10px] font-medium">Cat Grid</span>
             </button>
-            <button onclick="window.app.navigateTo('insights')" id="nav-insights" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
+            <button data-screen="insights" id="nav-insights" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
                 <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
                 <span class="text-[10px] font-medium">Insights</span>
             </button>
@@ -110,7 +110,7 @@
     </div>
 
     <!-- HIDDEN PHOTO INPUT -->
-    <input type="file" id="global-photo-input" accept="image/*" capture="environment" class="hidden" onchange="window.app.handleGlobalPhotoSelected(event)">
+    <input type="file" id="global-photo-input" accept="image/*" capture="environment" class="hidden">
 
     <!-- APPLICATION CONTROLLER SCRIPT -->
     <script>
@@ -131,18 +131,13 @@
                         settings: JSON.parse(localStorage.getItem('ww_settings') || '{"radius":50}')
                     };
                 } catch (e) {
-                    // Fallback if local storage was corrupted
                     localStorage.clear();
                     this.state = {
-                        currentScreen: 'home',
-                        selectedColonyId: null,
-                        selectedCatId: null,
-                        displayName: '',
-                        colonies: [], cats: [], resightings: [], alerts: [], careEpisodes: [], history: [], settings: { radius: 50 }
+                        currentScreen: 'home', selectedColonyId: null, selectedCatId: null,
+                        displayName: '', colonies: [], cats: [], resightings: [], alerts: [], careEpisodes: [], history: [], settings: { radius: 50 }
                     };
                 }
                 
-                // Exact Koilada, Peloponnese, Greece coordinates
                 this.koiladaCoords = [37.4134, 23.1256];
                 this.mapInstance = null;
                 this.currentTileLayer = null;
@@ -152,11 +147,37 @@
             }
 
             init() {
+                this.bindGlobalListeners();
                 if (!this.state.displayName) {
                     const setupModal = document.getElementById('setup-modal');
                     if (setupModal) setupModal.classList.remove('hidden');
                 } else {
                     this.render();
+                }
+            }
+
+            bindGlobalListeners() {
+                // Bottom navigation handlers
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const screen = btn.getAttribute('data-screen');
+                        if (screen) this.navigateTo(screen);
+                    });
+                });
+
+                // Header buttons
+                const photoBtn = document.getElementById('btn-photo-first');
+                if (photoBtn) photoBtn.addEventListener('click', () => this.triggerPhotoFirstAddCat());
+
+                const settingsBtn = document.getElementById('btn-settings');
+                if (settingsBtn) settingsBtn.addEventListener('click', () => this.openSettings());
+
+                const setupBtn = document.getElementById('btn-complete-setup');
+                if (setupBtn) setupBtn.addEventListener('click', () => this.completeSetup());
+
+                const globalFileInput = document.getElementById('global-photo-input');
+                if (globalFileInput) {
+                    globalFileInput.addEventListener('change', (e) => this.handleGlobalPhotoSelected(e));
                 }
             }
 
@@ -180,4 +201,72 @@
                 try {
                     localStorage.setItem('ww_colonies', JSON.stringify(this.state.colonies));
                     localStorage.setItem('ww_cats', JSON.stringify(this.state.cats));
-                    localStorage.setItem('ww_resightings', JSON.stringify(this
+                    localStorage.setItem('ww_resightings', JSON.stringify(this.state.resightings));
+                    localStorage.setItem('ww_alerts', JSON.stringify(this.state.alerts));
+                    localStorage.setItem('ww_care', JSON.stringify(this.state.careEpisodes));
+                    localStorage.setItem('ww_history', JSON.stringify(this.state.history));
+                    localStorage.setItem('ww_settings', JSON.stringify(this.state.settings));
+                } catch (e) {
+                    console.error('Storage save error:', e);
+                }
+            }
+
+            logHistory(actionType, recordId, details) {
+                const entry = {
+                    id: 'hist_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9),
+                    actor: this.state.displayName || 'Anonymous',
+                    timestamp: new Date().toISOString(),
+                    actionType,
+                    recordId,
+                    details
+                };
+                this.state.history.unshift(entry);
+                this.saveLocal();
+            }
+
+            navigateTo(screen, colonyId = null, catId = null) {
+                this.state.currentScreen = screen;
+                if (colonyId !== null) this.state.selectedColonyId = colonyId;
+                if (catId !== null) this.state.selectedCatId = catId;
+                this.isAddingColonyMode = false;
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-emerald-400', 'text-slate-400'));
+                const activeNav = document.getElementById('nav-' + (screen === 'profile' || screen === 'colony-profile' ? (screen === 'profile' ? 'grid' : 'colonies') : screen));
+                if (activeNav) activeNav.classList.replace('text-slate-400', 'text-emerald-400');
+
+                this.render();
+            }
+
+            render() {
+                const container = document.getElementById('main-content');
+                if (!container) return;
+                container.innerHTML = '';
+
+                switch (this.state.currentScreen) {
+                    case 'home':
+                        container.innerHTML = this.renderHomeScreen();
+                        this.initHomeMap();
+                        this.bindHomeEvents();
+                        break;
+                    case 'colonies':
+                        container.innerHTML = this.renderColoniesScreen();
+                        this.bindColoniesEvents();
+                        break;
+                    case 'grid':
+                        container.innerHTML = this.renderCatGridScreen();
+                        this.bindGridEvents();
+                        break;
+                    case 'profile':
+                        container.innerHTML = this.renderCatProfileScreen();
+                        this.initCatMap();
+                        this.bindProfileEvents();
+                        break;
+                    case 'colony-profile':
+                        container.innerHTML = this.renderColonyProfileScreen();
+                        this.bindColonyProfileEvents();
+                        break;
+                    case 'insights':
+                        container.innerHTML = this.renderInsightsScreen();
+                        break;
+                    case 'settings':
+                        container.innerHTML = this

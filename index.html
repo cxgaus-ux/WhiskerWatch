@@ -278,15 +278,96 @@ function renderColonyList(){
 
             <p>${colony.notes || ""}</p>
 
-            <p>
-              Radius:
-              ${colony.radius || 50}m
-            </p>
+            <p>Radius:
+            ${colony.radius || 50}m</p>
+
+            <button
+                onclick="editColony(${colony.id})">
+                Edit
+            </button>
+
+            <button
+                onclick="deleteColony(${colony.id})">
+                Delete
+            </button>
         `;
 
         colonyList.appendChild(card);
 
     });
+
+}
+
+function editColony(id){
+
+    const data =
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        );
+
+    const colony =
+        data.find(c => c.id === id);
+
+    if(!colony){
+        return;
+    }
+
+    const newName =
+        prompt(
+            "Colony name:",
+            colony.name
+        );
+
+    if(!newName){
+        return;
+    }
+
+    const newNotes =
+        prompt(
+            "Location notes:",
+            colony.notes
+        ) || "";
+
+    colony.name = newName;
+    colony.notes = newNotes;
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(data)
+    );
+
+    location.reload();
+
+}
+
+function deleteColony(id){
+
+    if(
+        !confirm(
+            "Delete this colony?"
+        )
+    ){
+        return;
+    }
+
+    const data =
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        );
+
+    const updated =
+        data.filter(
+            c => c.id !== id
+        );
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updated)
+    );
+
+    location.reload();
 
 }
 

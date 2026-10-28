@@ -43,6 +43,27 @@ button{
     height:80vh;
 }
 
+#colonySection{
+    padding:15px;
+}
+
+.colony-card{
+    border:1px solid #ddd;
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:10px;
+    background:white;
+}
+
+.colony-card h3{
+    margin-top:0;
+    margin-bottom:5px;
+}
+
+.colony-card button{
+    margin-top:5px;
+}
+
 </style>
 
 </head>
@@ -69,6 +90,14 @@ Clear Test Data
 </div>
 
 <div id="map"></div>
+
+<div id="colonySection">
+
+    <h2>Colonies</h2>
+
+    <div id="colonyList"></div>
+
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -197,7 +226,9 @@ map.on("click", e=>{
 
     addMarker(colony);
 
-    addingColony = false;
+renderColonyList();
+
+addingColony = false;
 
 });
 
@@ -221,7 +252,46 @@ document
 
 });
 
+function renderColonyList(){
+
+    const colonyList =
+        document.getElementById("colonyList");
+
+    colonyList.innerHTML = "";
+
+    const data =
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        );
+
+    data.forEach(colony=>{
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "colony-card";
+
+        card.innerHTML = `
+            <h3>${colony.name}</h3>
+
+            <p>${colony.notes || ""}</p>
+
+            <p>
+              Radius:
+              ${colony.radius || 50}m
+            </p>
+        `;
+
+        colonyList.appendChild(card);
+
+    });
+
+}
+
 loadColonies();
+renderColonyList();
 
 </script>
 

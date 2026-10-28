@@ -116,122 +116,68 @@
     <script>
         class WhiskerWatchApp {
             constructor() {
-                this.state = {
-                    currentScreen: 'home',
-                    selectedColonyId: null,
-                    selectedCatId: null,
-                    displayName: localStorage.getItem('ww_display_name') || '',
-                    colonies: JSON.parse(localStorage.getItem('ww_colonies') || '[]'),
-                    cats: JSON.parse(localStorage.getItem('ww_cats') || '[]'),
-                    resightings: JSON.parse(localStorage.getItem('ww_resightings') || '[]'),
-                    alerts: JSON.parse(localStorage.getItem('ww_alerts') || '[]'),
-                    careEpisodes: JSON.parse(localStorage.getItem('ww_care') || '[]'),
-                    history: JSON.parse(localStorage.getItem('ww_history') || '[]'),
-                    settings: JSON.parse(localStorage.getItem('ww_settings') || '{"radius":50}')
-                };
+                try {
+                    this.state = {
+                        currentScreen: 'home',
+                        selectedColonyId: null,
+                        selectedCatId: null,
+                        displayName: localStorage.getItem('ww_display_name') || '',
+                        colonies: JSON.parse(localStorage.getItem('ww_colonies') || '[]'),
+                        cats: JSON.parse(localStorage.getItem('ww_cats') || '[]'),
+                        resightings: JSON.parse(localStorage.getItem('ww_resightings') || '[]'),
+                        alerts: JSON.parse(localStorage.getItem('ww_alerts') || '[]'),
+                        careEpisodes: JSON.parse(localStorage.getItem('ww_care') || '[]'),
+                        history: JSON.parse(localStorage.getItem('ww_history') || '[]'),
+                        settings: JSON.parse(localStorage.getItem('ww_settings') || '{"radius":50}')
+                    };
+                } catch (e) {
+                    // Fallback if local storage was corrupted
+                    localStorage.clear();
+                    this.state = {
+                        currentScreen: 'home',
+                        selectedColonyId: null,
+                        selectedCatId: null,
+                        displayName: '',
+                        colonies: [], cats: [], resightings: [], alerts: [], careEpisodes: [], history: [], settings: { radius: 50 }
+                    };
+                }
                 
                 // Exact Koilada, Peloponnese, Greece coordinates
                 this.koiladaCoords = [37.4134, 23.1256];
                 this.mapInstance = null;
                 this.currentTileLayer = null;
-                this.mapLayerType = 'street'; // 'street' or 'satellite'
+                this.mapLayerType = 'street';
                 this.activePhotoFirstFile = null;
                 this.isAddingColonyMode = false;
             }
 
             init() {
                 if (!this.state.displayName) {
-                    document.getElementById('setup-modal').classList.remove('hidden');
+                    const setupModal = document.getElementById('setup-modal');
+                    if (setupModal) setupModal.classList.remove('hidden');
                 } else {
                     this.render();
                 }
             }
 
             completeSetup() {
-                const nameInput = document.getElementById('setup-display-name').value.trim();
-                if (!nameInput) {
+                const nameInput = document.getElementById('setup-display-name');
+                if (!nameInput) return;
+                const nameVal = nameInput.value.trim();
+                if (!nameVal) {
                     alert('Please enter a display name to continue.');
                     return;
                 }
-                this.state.displayName = nameInput;
-                localStorage.setItem('ww_display_name', nameInput);
-                document.getElementById('setup-modal').classList.add('hidden');
-                this.logHistory('Setup', 'System', 'Initialized local user: ' + nameInput);
+                this.state.displayName = nameVal;
+                localStorage.setItem('ww_display_name', nameVal);
+                const setupModal = document.getElementById('setup-modal');
+                if (setupModal) setupModal.classList.add('hidden');
+                this.logHistory('Setup', 'System', 'Initialized local user: ' + nameVal);
                 this.render();
             }
 
             saveLocal() {
-                localStorage.setItem('ww_colonies', JSON.stringify(this.state.colonies));
-                localStorage.setItem('ww_cats', JSON.stringify(this.state.cats));
-                localStorage.setItem('ww_resightings', JSON.stringify(this.state.resightings));
-                localStorage.setItem('ww_alerts', JSON.stringify(this.state.alerts));
-                localStorage.setItem('ww_care', JSON.stringify(this.state.careEpisodes));
-                localStorage.setItem('ww_history', JSON.stringify(this.state.history));
-                localStorage.setItem('ww_settings', JSON.stringify(this.state.settings));
-            }
-
-            logHistory(actionType, recordId, details) {
-                const entry = {
-                    id: 'hist_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9),
-                    actor: this.state.displayName || 'Anonymous',
-                    timestamp: new Date().toISOString(),
-                    actionType,
-                    recordId,
-                    details
-                };
-                this.state.history.unshift(entry);
-                this.saveLocal();
-            }
-
-            navigateTo(screen, colonyId = null, catId = null) {
-                this.state.currentScreen = screen;
-                if (colonyId !== null) this.state.selectedColonyId = colonyId;
-                if (catId !== null) this.state.selectedCatId = catId;
-                this.isAddingColonyMode = false;
-                
-                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-emerald-400', 'text-slate-400'));
-                const activeNav = document.getElementById('nav-' + (screen === 'profile' || screen === 'colony-profile' ? (screen === 'profile' ? 'grid' : 'colonies') : screen));
-                if (activeNav) activeNav.classList.replace('text-slate-400', 'text-emerald-400');
-
-                this.render();
-            }
-
-            render() {
-                const container = document.getElementById('main-content');
-                container.innerHTML = '';
-
-                switch (this.state.currentScreen) {
-                    case 'home':
-                        container.innerHTML = this.renderHomeScreen();
-                        this.initHomeMap();
-                        break;
-                    case 'colonies':
-                        container.innerHTML = this.renderColoniesScreen();
-                        break;
-                    case 'grid':
-                        container.innerHTML = this.renderCatGridScreen();
-                        break;
-                    case 'profile':
-                        container.innerHTML = this.renderCatProfileScreen();
-                        this.initCatMap();
-                        break;
-                    case 'colony-profile':
-                        container.innerHTML = this.renderColonyProfileScreen();
-                        break;
-                    case 'insights':
-                        container.innerHTML = this.renderInsightsScreen();
-                        break;
-                    case 'settings':
-                        container.innerHTML = this.renderSettingsScreen();
-                        break;
-                }
-            }
-
-            // ==========================================
-            // HOME SCREEN & INTERACTIVE MAP (WW-05)
-            // ==========================================
-            renderHomeScreen() {
-                return `
-                    <div class="h-full flex flex-col p-3 space-y-2">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-800">
-                            <div>
+                try {
+                    localStorage.setItem('ww_colonies', JSON.stringify(this.state.colonies));
+                    localStorage.setItem('ww_cats', JSON.stringify(this.state.cats));
+                    localStorage.setItem('ww_resightings', JSON.stringify(this

@@ -128,12 +128,23 @@ function addMarker(colony){
         colony.lng
     ]).addTo(map);
 
+     L.circle(
+        [colony.lat, colony.lng],
+        {
+            radius: colony.radius || 50,
+            color: "#2f6246",
+            fillColor: "#2f6246",
+            fillOpacity: 0.1
+        }
+    ).addTo(map);
+    
     marker.bindPopup(`
         <b>${colony.name}</b>
         <br>
         ${colony.notes || ""}
+        <br>
+        Radius: ${colony.radius || 50}m
     `);
-
 }
 
 document
@@ -168,17 +179,19 @@ map.on("click", e=>{
 
     const colony = {
 
-        id:Date.now(),
+    id:Date.now(),
 
-        name:name,
+    name:name,
 
-        notes:notes,
+    notes:notes,
 
-        lat:e.latlng.lat,
+    radius:50,
 
-        lng:e.latlng.lng
+    lat:e.latlng.lat,
 
-    };
+    lng:e.latlng.lng
+
+};
 
     saveColony(colony);
 

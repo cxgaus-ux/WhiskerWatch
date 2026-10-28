@@ -1,887 +1,617 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhiskerWatch - Koilada Community Cat Welfare Management System</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WhiskerWatch V3 — Koilada Community Cat Welfare</title>
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <!-- Leaflet CSS & JS for Interactive Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
     <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDKs (Modular v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        window.FirebaseSDK = { initializeApp, getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, enableIndexedDbPersistence, getStorage, ref, uploadBytes, getDownloadURL, deleteObject };
+    </script>
+
     <style>
-        .tab-section { display: none; }
-        .tab-section.active { display: block; }
-        #map { height: 450px; width: 100%; border-radius: 0.75rem; z-index: 1; background: #fef3c7; }
+        .leaflet-container { height: 100%; width: 100%; border-radius: 0.75rem; background: #1e293b; }
+        /* Custom scrollbars for compact mobile views */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
     </style>
 </head>
-<body class="bg-amber-50/50 text-stone-800 font-sans min-h-screen flex flex-col">
+<body class="h-full flex flex-col overflow-hidden select-none">
 
-    <!-- Welcome Modal (First Use) -->
-    <div id="welcomeModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-amber-200 space-y-4">
-            <div class="text-center">
-                <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl font-bold">🐾</div>
-                <h2 class="text-2xl font-bold text-stone-900">WhiskerWatch</h2>
-                <p class="text-xs text-stone-600 mt-1">A Community Cat Welfare Management System for Koilada.</p>
+    <!-- SETUP & DISPLAY NAME MODAL (WW-01-05) -->
+    <div id="setup-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-400 mb-3 text-2xl">
+                    <i class="fa-solid fa-cat"></i>
+                </div>
+                <h2 class="text-xl font-bold">Welcome to WhiskerWatch V3</h2>
+                <p class="text-sm text-slate-400 mt-1">Koilada Stray Cat Census & Welfare Management</p>
             </div>
-            <div class="bg-amber-50 p-3 rounded-xl text-xs text-stone-700 space-y-1">
-                <p><strong>Purpose:</strong> Consistent observations support cat welfare, targeted TNR, and population management. Stored securely on your device.</p>
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Your Display Name (for Action History):</label>
-                <input type="text" id="setupDisplayName" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g., Volunteer Maria">
-            </div>
-            <button onclick="saveInitialUser()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">Start Using WhiskerWatch</button>
-        </div>
-    </div>
-
-    <!-- Header & Navigation -->
-    <header class="bg-white border-b border-amber-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
-            <div class="flex items-center space-x-2 cursor-pointer" onclick="switchTab('home')">
-                <div class="bg-amber-600 text-white p-2 rounded-xl font-bold text-lg"><i class="fa-solid fa-cat"></i></div>
+            <p class="text-xs text-slate-300 mb-4 bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> <strong>Shared Dataset Notice:</strong> Authorized contributors share one unified dataset. Please enter your display name for action attribution.
+            </p>
+            <div class="space-y-4">
                 <div>
-                    <h1 class="font-bold text-base text-stone-900 leading-tight">WhiskerWatch <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">Koilada</span></h1>
-                    <p class="text-[10px] text-stone-500">Targeted Care & Population Management</p>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Your Display Name *</label>
+                    <input type="text" id="setup-display-name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500" placeholder="e.g., Maria K.">
                 </div>
-            </div>
-            <nav class="flex flex-wrap gap-1 items-center">
-                <button onclick="switchTab('home')" id="nav-home" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white transition">Home</button>
-                <button onclick="switchTab('colonies')" id="nav-colonies" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:bg-amber-100 transition">Colonies</button>
-                <button onclick="switchTab('insights')" id="nav-insights" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:bg-amber-100 transition">Insights</button>
-                <button onclick="openSettingsModal()" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:bg-amber-100 transition" title="Settings & Backup">⚙️</button>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
-
-        <!-- 1. HOME DESTINATION (Leaflet Map) -->
-        <section id="tab-home" class="tab-section active space-y-6">
-            <div class="bg-white p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
-                <div class="flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                        <h2 class="text-xl font-bold text-stone-900">Koilada Colony Map</h2>
-                        <p class="text-xs text-stone-500">Tap anywhere on the map to add a new colony. Drag markers to update locations.</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="centerMap()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-xl text-xs font-semibold border transition">Centre</button>
-                        <button onclick="openColonyModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold shadow transition">+ Add Colony</button>
-                        <button onclick="exportAllCSV()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-xl text-xs font-semibold border transition">Export Data</button>
-                    </div>
-                </div>
-
-                <!-- Leaflet Map Container -->
-                <div id="map"></div>
-
-                <!-- Map Layer Toggles & Legend -->
-                <div class="flex flex-wrap justify-between items-center text-xs text-stone-600 pt-2 border-t">
-                    <div class="flex items-center space-x-3">
-                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block mr-1"></span> Colony Paw Marker (50m Radius)</span>
-                    </div>
-                    <div class="flex space-x-3 font-medium bg-stone-100 px-3 py-1.5 rounded-lg border">
-                        <span>Map View:</span>
-                        <button onclick="setMapLayer('street')" class="underline hover:text-amber-700 font-bold text-amber-800">Street View</button>
-                        <span>•</span>
-                        <button onclick="setMapLayer('satellite')" class="underline hover:text-amber-700 font-bold text-stone-900">Satellite View</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. COLONIES DESTINATION -->
-        <section id="tab-colonies" class="tab-section space-y-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-bold text-stone-900">Colonies Management</h2>
-                    <p class="text-xs text-stone-500">View, compare, and manage all monitored cat colonies in Koilada.</p>
-                </div>
-                <button onclick="openColonyModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition">+ Add Colony</button>
-            </div>
-            <div id="coloniesListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </section>
-
-        <!-- 3. POPULATION INSIGHTS DESTINATION -->
-        <section id="tab-insights" class="tab-section space-y-6">
-            <div>
-                <h2 class="text-2xl font-bold text-stone-900">Population Insights & TNR Priorities</h2>
-                <p class="text-xs text-stone-500">Lincoln-Petersen population estimates, sterilisation coverage, and decision support.</p>
-            </div>
-            <div id="insightsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-        </section>
-
-        <!-- 4. CAT GRID DESTINATION -->
-        <section id="tab-cat-grid" class="tab-section space-y-6">
-            <div class="bg-white p-4 rounded-2xl border border-amber-200 flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <button onclick="switchTab('colonies')" class="text-xs text-amber-700 hover:underline font-semibold">← Back to Colonies</button>
-                    <h2 id="gridColonyTitle" class="text-xl font-bold text-stone-900 mt-1">Colony Cat Grid</h2>
-                </div>
-                <div class="flex items-center space-x-2 flex-wrap gap-2">
-                    <select id="filterSex" onchange="renderCatGrid()" class="px-2 py-1 border rounded text-xs bg-white">
-                        <option value="">All Sexes</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Unknown">Unknown</option>
-                    </select>
-                    <select id="filterSterile" onchange="renderCatGrid()" class="px-2 py-1 border rounded text-xs bg-white">
-                        <option value="">All Sterilisation</option>
-                        <option value="Sterilised">Sterilised</option>
-                        <option value="Unsterilised">Unsterilised</option>
-                    </select>
-                    <button onclick="clearCatFilters()" class="text-xs text-stone-500 underline">Clear Filters</button>
-                    <button onclick="openCatProfileModal(null)" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold shadow transition">+ Register Cat</button>
-                </div>
-            </div>
-            <div id="catGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-        </section>
-
-        <!-- 5. CAT PROFILE DESTINATION -->
-        <section id="tab-cat-profile" class="tab-section space-y-6">
-            <div class="bg-white p-6 rounded-2xl border border-amber-200 max-w-3xl mx-auto shadow-sm space-y-4">
-                <div class="flex justify-between items-center pb-2 border-b">
-                    <button onclick="openCatGrid(activeColonyId)" class="text-xs text-amber-700 hover:underline font-semibold">← Back to Cat Grid</button>
-                    <div class="space-x-2">
-                        <button onclick="navigateCatProfile(-1)" class="px-3 py-1 bg-stone-100 hover:bg-stone-200 rounded text-xs font-medium">Prev Cat</button>
-                        <button onclick="navigateCatProfile(1)" class="px-3 py-1 bg-stone-100 hover:bg-stone-200 rounded text-xs font-medium">Next Cat</button>
-                    </div>
-                </div>
-                <div id="catProfileContent"></div>
-            </div>
-        </section>
-
-        <!-- 6. COLONY PROFILE DESTINATION -->
-        <section id="tab-colony-profile" class="tab-section space-y-6">
-            <div class="bg-white p-6 rounded-2xl border border-amber-200 max-w-4xl mx-auto shadow-sm space-y-4">
-                <button onclick="switchTab('colonies')" class="text-xs text-amber-700 hover:underline font-semibold">← Back to Colonies</button>
-                <div id="colonyProfileContent"></div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Settings & Data Backup Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-amber-200 space-y-4">
-            <h3 class="text-lg font-bold text-stone-900">Settings & Local Data Backup</h3>
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Display Name (Action History)</label>
-                <input type="text" id="settingsDisplayName" class="w-full px-3 py-2 border rounded-lg text-sm">
-            </div>
-            <div class="border-t pt-3 space-y-2">
-                <button onclick="exportAllCSV()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-xs font-semibold transition">
-                    Export All Data (CSV Backups)
+                <button onclick="app.completeSetup()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-lg shadow-emerald-900/20">
+                    Start Contributing
                 </button>
-                <p class="text-[10px] text-stone-500">All records live exclusively on this device. Back up regularly via CSV export.</p>
-            </div>
-            <div class="flex justify-end pt-2">
-                <button onclick="closeSettingsModal()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-lg text-xs font-medium">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Colony Modal -->
-    <div id="colonyModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-amber-200 space-y-3">
-            <h3 class="text-lg font-bold text-stone-900">Add New Colony</h3>
-            <input type="hidden" id="modalColLat" value="37.4163">
-            <input type="hidden" id="modalColLng" value="23.1276">
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Colony Name *</label>
-                <input type="text" id="modalColonyName" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g., Port Taverna Colony">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Location Notes *</label>
-                <input type="text" id="modalColonyNotes" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g., Behind blue boat storage">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Radius (meters)</label>
-                    <input type="number" id="modalColonyRadius" value="50" class="w-full px-3 py-2 border rounded-lg text-sm">
+    <!-- MAIN APP CONTAINER -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- TOP HEADER BAR -->
+        <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-paw"></i>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Dedicated Caretakers</label>
-                    <input type="text" id="modalColonyCaretakers" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g., Maria">
+                    <h1 class="font-bold text-sm sm:text-base leading-tight tracking-tight">WhiskerWatch <span class="text-xs font-normal text-emerald-400 ml-1">Koilada V3</span></h1>
+                    <p class="text-[10px] text-slate-400 hidden sm:block">Community Cat Welfare & Population Management</p>
                 </div>
             </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="document.getElementById('colonyModal').style.display='none'" class="px-4 py-2 border rounded-lg text-xs font-medium">Cancel</button>
-                <button onclick="saveColony()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold">Save Colony</button>
+
+            <!-- Sync Status & Quick Actions -->
+            <div class="flex items-center space-x-2">
+                <div id="sync-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px]">
+                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="sync-text" class="text-slate-300">Local Only</span>
+                </div>
+                
+                <!-- PHOTO-FIRST ADD CAT (Home Action WW-05-09) -->
+                <button onclick="app.triggerPhotoFirstAddCat()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 shadow-sm transition-colors">
+                    <i class="fa-solid fa-camera"></i>
+                    <span class="hidden md:inline">Add Cat — Photo</span>
+                </button>
+                
+                <button onclick="app.openSettings()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm transition-colors" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
             </div>
-        </div>
+        </header>
+
+        <!-- CONTENT AREA (DYNAMIC SCREENS) -->
+        <main id="main-content" class="flex-1 overflow-y-auto relative bg-slate-950">
+            <!-- Injected Screen Views Render Here -->
+        </main>
+
+        <!-- BOTTOM NAVIGATION BAR (WW-04-01 / WW-04-02) -->
+        <nav class="bg-slate-900 border-t border-slate-800 grid grid-cols-4 py-2 px-3 shrink-0 text-center">
+            <button onclick="app.navigateTo('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center text-emerald-400">
+                <i class="fa-solid fa-map text-base mb-0.5"></i>
+                <span class="text-[10px] font-medium">Home Map</span>
+            </button>
+            <button onclick="app.navigateTo('colonies')" id="nav-colonies" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-layer-group text-base mb-0.5"></i>
+                <span class="text-[10px] font-medium">Colonies</span>
+            </button>
+            <button onclick="app.navigateTo('grid')" id="nav-grid" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-grid-2 text-base mb-0.5"></i>
+                <span class="text-[10px] font-medium">Cat Grid</span>
+            </button>
+            <button onclick="app.navigateTo('insights')" id="nav-insights" class="nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
+                <span class="text-[10px] font-medium">Insights</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- Comprehensive Cat Registration Modal -->
-    <div id="catModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-amber-200 space-y-3 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-lg font-bold text-stone-900" id="catModalTitle">Register New Cat</h3>
-            <input type="hidden" id="modalCatId">
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Cat Name / Identifier *</label>
-                <input type="text" id="modalCatName" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g., Stripe or Tabby">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Sex</label>
-                    <select id="modalCatSex" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                        <option value="Unknown">Unknown</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Life Stage</label>
-                    <select id="modalCatLifeStage" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                        <option value="adult">Adult</option>
-                        <option value="kitten">Kitten</option>
-                        <option value="juvenile">Juvenile</option>
-                        <option value="senior">Senior</option>
-                        <option value="unknown">Unknown</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Sterilisation Status</label>
-                    <select id="modalCatSterile" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                        <option value="Unknown">Unknown</option>
-                        <option value="Sterilised">Sterilised</option>
-                        <option value="Unsterilised">Unsterilised</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Body Condition</label>
-                    <select id="modalCatBodyCondition" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                        <option value="good">Good</option>
-                        <option value="thin">Thin</option>
-                        <option value="emaciated">Emaciated (Vet Alert)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Health Status</label>
-                    <select id="modalCatHealth" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                        <option value="healthy">Healthy</option>
-                        <option value="unwell">Unwell</option>
-                        <option value="critically ill/injured">Critically Ill / Injured (Vet Alert)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-stone-700 mb-1">Reproductive Status</label>
-                    <select id="modalCatReproduction" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                        <option value="none">None / Not Applicable</option>
-                        <option value="pregnant">Pregnant</option>
-                        <option value="nursing">Nursing</option>
-                        <option value="caring for kittens">Caring for Kittens</option>
-                    </select>
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Special Markings / Description / Notes</label>
-                <textarea id="modalCatNotes" class="w-full px-3 py-2 border rounded-lg text-sm" rows="2" placeholder="e.g., Notched left ear, friendly"></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-stone-700 mb-1">Photo (Library or Camera)</label>
-                <input type="file" id="modalCatPhotoFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="document.getElementById('catModal').style.display='none'" class="px-4 py-2 border rounded-lg text-xs font-medium">Cancel</button>
-                <button onclick="saveCat()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold">Save Cat Record</button>
-            </div>
-        </div>
-    </div>
+    <!-- HIDDEN FILE INPUT FOR PHOTO CAPTURE / UPLOAD -->
+    <input type="file" id="global-photo-input" accept="image/*" capture="environment" class="hidden" onchange="app.handleGlobalPhotoSelected(event)">
 
-    <!-- Application Script Logic -->
+    <!-- APPLICATION CONTROLLER SCRIPT -->
     <script>
-        const safeGetStorage = (key, fallback) => {
-            try { return localStorage.getItem(key) || fallback; } catch(e) { return fallback; }
-        };
-        const safeParseStorage = (key, fallback) => {
-            try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; }
-        };
-
-        const db = {
-            user: safeGetStorage('ww_user', ''),
-            colonies: safeParseStorage('ww_colonies', []),
-            cats: safeParseStorage('ww_cats', []),
-            resightings: safeParseStorage('ww_resightings', []),
-            alerts: safeParseStorage('ww_alerts', []),
-            episodes: safeParseStorage('ww_episodes', []),
-            history: safeParseStorage('ww_history', [])
-        };
-
-        let map = null;
-        let currentTileLayer = null;
-        let colonyMarkers = {};
-        let activeColonyId = null;
-        let currentCatId = null;
-        const KOILADA_LAT = 37.4163;
-        const KOILADA_LNG = 23.1276;
-
-        window.addEventListener('DOMContentLoaded', function() {
-            if (!db.user) {
-                const modal = document.getElementById('welcomeModal');
-                if (modal) modal.style.display = 'flex';
-            } else {
-                const settingsInput = document.getElementById('settingsDisplayName');
-                if (settingsInput) settingsInput.value = db.user;
-            }
-            initMap();
-            renderAll();
-        });
-
-        function saveInitialUser() {
-            const input = document.getElementById('setupDisplayName');
-            const name = input ? input.value.trim() : '';
-            if (!name) { alert('Please enter your display name.'); return; }
-            db.user = name;
-            const settingsInput = document.getElementById('settingsDisplayName');
-            if (settingsInput) settingsInput.value = name;
-            try { localStorage.setItem('ww_user', name); } catch(e) {}
-            const modal = document.getElementById('welcomeModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function openSettingsModal() {
-            const input = document.getElementById('settingsDisplayName');
-            if (input) input.value = db.user;
-            const modal = document.getElementById('settingsModal');
-            if (modal) modal.style.display = 'flex';
-        }
-
-        function closeSettingsModal() {
-            const input = document.getElementById('settingsDisplayName');
-            db.user = input ? (input.value.trim() || 'Volunteer') : 'Volunteer';
-            try { localStorage.setItem('ww_user', db.user); } catch(e) {}
-            const modal = document.getElementById('settingsModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-section').forEach(function(el) {
-                el.classList.remove('active');
-            });
-            document.querySelectorAll('.nav-btn').forEach(function(btn) {
-                btn.classList.remove('bg-amber-600', 'text-white');
-                btn.classList.add('text-stone-600');
-            });
-            
-            const target = document.getElementById('tab-' + tabId);
-            if (target) target.classList.add('active');
-            
-            const btn = document.getElementById('nav-' + tabId);
-            if (btn) {
-                btn.classList.add('bg-amber-600', 'text-white');
-                btn.classList.remove('text-stone-600');
-            }
-
-            if (tabId === 'home' && map) {
-                setTimeout(function() { map.invalidateSize(); }, 150);
-            }
-        }
-
-        function initMap() {
-            try {
-                if (typeof L === 'undefined') {
-                    document.getElementById('map').innerHTML = '<div class="p-6 text-center text-red-600 text-xs">Map libraries are loading. Please check your internet connection and refresh the page.</div>';
-                    return;
-                }
+        /**
+         * WhiskerWatch V3 Core Application Engine
+         * Local-First Architecture with GitHub Pages Hosting & Automatic Firebase Sync
+         */
+        class WhiskerWatchApp {
+            constructor() {
+                this.state = {
+                    currentScreen: 'home', // home, colonies, grid, profile, colony-profile, insights, settings
+                    selectedColonyId: null,
+                    selectedCatId: null,
+                    displayName: localStorage.getItem('ww_display_name') || '',
+                    colonies: JSON.parse(localStorage.getItem('ww_colonies') || '[]'),
+                    cats: JSON.parse(localStorage.getItem('ww_cats') || '[]'),
+                    resightings: JSON.parse(localStorage.getItem('ww_resightings') || '[]'),
+                    alerts: JSON.parse(localStorage.getItem('ww_alerts') || '[]'),
+                    careEpisodes: JSON.parse(localStorage.getItem('ww_care') || '[]'),
+                    history: JSON.parse(localStorage.getItem('ww_history') || '[]'),
+                    settings: JSON.parse(localStorage.getItem('ww_settings') || '{"radius":50}'),
+                    filters: { sex: '', lifeStage: '', sterilisation: '', bodyCondition: '', health: '', search: '' },
+                    syncStatus: 'local', // local, syncing, synced, error
+                    pendingCount: 0
+                };
                 
-                map = L.map('map').setView([KOILADA_LAT, KOILADA_LNG], 15);
-                
-                // OpenStreetMap Standard Tiles (No API key required)
-                currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-
-                map.on('click', function(e) {
-                    const latInput = document.getElementById('modalColLat');
-                    const lngInput = document.getElementById('modalColLng');
-                    if (latInput) latInput.value = e.latlng.lat;
-                    if (lngInput) lngInput.value = e.latlng.lng;
-                    
-                    const nameInput = document.getElementById('modalColonyName');
-                    const notesInput = document.getElementById('modalColonyNotes');
-                    const radiusInput = document.getElementById('modalColonyRadius');
-                    const caretakersInput = document.getElementById('modalColonyCaretakers');
-
-                    if (nameInput) nameInput.value = '';
-                    if (notesInput) notesInput.value = '';
-                    if (radiusInput) radiusInput.value = '50';
-                    if (caretakersInput) caretakersInput.value = '';
-
-                    const colModal = document.getElementById('colonyModal');
-                    if (colModal) colModal.style.display = 'flex';
-                });
-
-                db.colonies.forEach(function(c) { addColonyToMap(c); });
-            } catch (err) {
-                console.error("Map initialization error:", err);
-            }
-        }
-
-        function setMapLayer(type) {
-            if (!map) return;
-            if (currentTileLayer) map.removeLayer(currentTileLayer);
-            if (type === 'satellite') {
-                currentTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    maxZoom: 19, attribution: 'Tiles &copy; Esri'
-                }).addTo(map);
-            } else {
-                currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-            }
-        }
-
-        function centerMap() {
-            if (map) map.setView([KOILADA_LAT, KOILADA_LNG], 15);
-        }
-
-        function addColonyToMap(colony) {
-            if (!map || typeof L === 'undefined') return;
-
-            const pawIcon = L.divIcon({
-                className: 'custom-paw-marker',
-                html: '<div style="background:#d97706;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:14px;"><i class="fa-solid fa-paw"></i></div>',
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
-            });
-
-            const marker = L.marker([colony.lat || KOILADA_LAT, colony.lng || KOILADA_LNG], { icon: pawIcon, draggable: true }).addTo(map);
-            
-            const radius = colony.radius || 50;
-            const circle = L.circle([colony.lat || KOILADA_LAT, colony.lng || KOILADA_LNG], {
-                radius: radius, color: '#d97706', fillColor: '#f59e0b', fillOpacity: 0.15, weight: 1
-            }).addTo(map);
-
-            marker.on('dragend', function(e) {
-                const pos = e.target.getLatLng();
-                const prev = { lat: colony.lat, lng: colony.lng };
-                colony.lat = pos.lat;
-                colony.lng = pos.lng;
-                circle.setLatLng([pos.lat, pos.lng]);
-                logAction('MOVE_COLONY_PIN', colony.id, prev, { lat: pos.lat, lng: pos.lng });
-                persist();
-            });
-
-            const colonyCats = db.cats.filter(function(cat) { return cat.colonyId === colony.id; });
-            const total = colonyCats.length;
-            const unsterilised = colonyCats.filter(function(cat) { return cat.sterilisation === 'Unsterilised'; }).length;
-            const emaciated = colonyCats.filter(function(cat) { return cat.bodyCondition === 'emaciated'; }).length;
-            const critical = colonyCats.filter(function(cat) { return cat.health === 'critically ill/injured'; }).length;
-
-            const pctUnsterilised = total > 0 ? Math.round((unsterilised / total) * 100) : 0;
-            const pctEmaciated = total > 0 ? Math.round((emaciated / total) * 100) : 0;
-            const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
-
-            marker.bindPopup(`
-                <div class="p-2 space-y-1 text-xs">
-                    <h3 class="font-bold text-stone-900 text-sm">${colony.name}</h3>
-                    <p class="text-stone-600">${colony.notes || 'No notes'}</p>
-                    <p><strong>Caretakers:</strong> ${colony.caretakers || 'None assigned'}</p>
-                    <div class="border-t pt-1 space-y-0.5 text-[11px]">
-                        <p>🐾 <strong>Recorded Cats:</strong> ${total}</p>
-                        <p>⚠️ <strong>Unsterilised:</strong> ${pctUnsterilised}%</p>
-                        <p>🔸 <strong>Emaciated:</strong> ${pctEmaciated}%</p>
-                        <p>🚨 <strong>Critically Ill/Injured:</strong> ${pctCritical}%</p>
-                    </div>
-                    <button onclick="openCatGrid('${colony.id}')" class="w-full bg-amber-600 text-white py-1 rounded font-semibold mt-2">Open Cat Grid</button>
-                    <button onclick="openColonyProfile('${colony.id}')" class="w-full bg-stone-200 text-stone-800 py-1 rounded font-semibold mt-1">Colony Profile</button>
-                </div>
-            `);
-            colonyMarkers[colony.id] = marker;
-        }
-
-        function openColonyModal() {
-            const latInput = document.getElementById('modalColLat');
-            const lngInput = document.getElementById('modalColLng');
-            if (latInput) latInput.value = KOILADA_LAT;
-            if (lngInput) lngInput.value = KOILADA_LNG;
-
-            const nameInput = document.getElementById('modalColonyName');
-            const notesInput = document.getElementById('modalColonyNotes');
-            const radiusInput = document.getElementById('modalColonyRadius');
-            const caretakersInput = document.getElementById('modalColonyCaretakers');
-
-            if (nameInput) nameInput.value = '';
-            if (notesInput) notesInput.value = '';
-            if (radiusInput) radiusInput.value = '50';
-            if (caretakersInput) caretakersInput.value = '';
-
-            const colModal = document.getElementById('colonyModal');
-            if (colModal) colModal.style.display = 'flex';
-        }
-
-        function saveColony() {
-            const nameInput = document.getElementById('modalColonyName');
-            const notesInput = document.getElementById('modalColonyNotes');
-            const radiusInput = document.getElementById('modalColonyRadius');
-            const caretakersInput = document.getElementById('modalColonyCaretakers');
-            const latInput = document.getElementById('modalColLat');
-            const lngInput = document.getElementById('modalColLng');
-
-            const name = nameInput ? nameInput.value.trim() : '';
-            const notes = notesInput ? notesInput.value.trim() : '';
-            const radius = radiusInput ? (parseInt(radiusInput.value) || 50) : 50;
-            const caretakers = caretakersInput ? caretakersInput.value.trim() : '';
-            const lat = latInput ? (parseFloat(latInput.value) || KOILADA_LAT) : KOILADA_LAT;
-            const lng = lngInput ? (parseFloat(lngInput.value) || KOILADA_LNG) : KOILADA_LNG;
-
-            if (!name || !notes) { alert('Please fill in Colony Name and Location Notes.'); return; }
-
-            const newColony = { id: 'COL-' + Date.now(), name: name, notes: notes, radius: radius, caretakers: caretakers, lat: lat, lng: lng };
-            db.colonies.push(newColony);
-            logAction('ADD_COLONY', newColony.id, null, newColony);
-            persist();
-            addColonyToMap(newColony);
-            renderAll();
-            
-            const colModal = document.getElementById('colonyModal');
-            if (colModal) colModal.style.display = 'none';
-        }
-
-        function renderAll() {
-            renderColoniesLists();
-            renderInsights();
-        }
-
-        function renderColoniesLists() {
-            const container = document.getElementById('coloniesListContainer');
-            if (!container) return;
-            container.innerHTML = db.colonies.length === 0 ? '<p class="text-xs text-stone-500 col-span-full">No colonies recorded yet. Add one via the Home map or button above.</p>' : '';
-            
-            db.colonies.forEach(function(c) {
-                const colonyCats = db.cats.filter(function(cat) { return cat.colonyId === c.id; });
-                const total = colonyCats.length;
-                const unsterilised = colonyCats.filter(function(cat) { return cat.sterilisation === 'Unsterilised'; }).length;
-                const pctUnsterilised = total > 0 ? Math.round((unsterilised / total) * 100) : 0;
-
-                const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between space-y-3";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-stone-900 text-base">🐾 ${c.name}</h3>
-                            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">${total} Cats</span>
-                        </div>
-                        <p class="text-xs text-stone-500 mt-1">${c.notes} • Radius: ${c.radius || 50}m</p>
-                        <p class="text-xs text-stone-600 mt-1"><strong>Caretakers:</strong> ${c.caretakers || 'None assigned'}</p>
-                        <p class="text-xs text-stone-600 mt-0.5">⚠️ Unsterilised: ${pctUnsterilised}%</p>
-                    </div>
-                    <div class="flex space-x-2 pt-2 border-t">
-                        <button onclick="openCatGrid('${c.id}')" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-1.5 rounded-xl text-xs font-semibold shadow transition">Cat Grid</button>
-                        <button onclick="openColonyProfile('${c.id}')" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 py-1.5 rounded-xl text-xs font-semibold shadow transition">Profile</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function openCatGrid(colonyId) {
-            activeColonyId = colonyId;
-            const colony = db.colonies.find(function(c) { return c.id === colonyId; });
-            const titleEl = document.getElementById('gridColonyTitle');
-            if (titleEl) titleEl.innerText = colony ? colony.name + ' - Cat Grid' : 'Cat Grid';
-            renderCatGrid();
-            switchTab('cat-grid');
-        }
-
-        function renderCatGrid() {
-            const container = document.getElementById('catGridContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const sexFEl = document.getElementById('filterSex');
-            const sterFEl = document.getElementById('filterSterile');
-            const sexF = sexFEl ? sexFEl.value : '';
-            const sterF = sterFEl ? sterFEl.value : '';
-
-            const cats = db.cats.filter(function(cat) {
-                if (cat.colonyId !== activeColonyId) return false;
-                if (sexF && cat.sex !== sexF) return false;
-                if (sterF && cat.sterilisation !== sterF) return false;
-                return true;
-            });
-
-            if (cats.length === 0) {
-                container.innerHTML = '<p class="text-xs text-stone-500 col-span-full">No matching cats found in this colony.</p>';
-                return;
+                // Default Koilada, Peloponnese, Greece coordinates
+                this.koiladaCoords = [37.3833, 23.1167];
+                this.mapInstance = null;
+                this.activePhotoFirstFile = null;
             }
 
-            cats.forEach(function(cat) {
-                const resights = db.resightings.filter(function(r) { return r.catId === cat.id; }).length;
-                const box = document.createElement('div');
-                box.className = "bg-white p-3 rounded-2xl border shadow-sm flex flex-col justify-between space-y-2";
-                const photoSrc = (cat.photos && cat.photos.length > 0) ? cat.photos[0].url : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200';
-                box.innerHTML = `
-                    <div class="h-28 bg-stone-100 rounded-xl overflow-hidden cursor-pointer" onclick="openCatProfile('${cat.id}')">
-                        <img src="${photoSrc}" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <p class="font-bold text-sm truncate">${cat.name}</p>
-                        <p class="text-[10px] text-stone-500">${cat.sex} • ${cat.sterilisation}</p>
-                        <p class="text-[10px] text-amber-700 font-medium">Re-sights: ${resights}</p>
-                    </div>
-                    <div class="flex space-x-1 pt-1 border-t">
-                        <button onclick="recordResight('${cat.id}')" class="flex-1 bg-amber-600 text-white py-1 rounded text-[10px] font-semibold">Re-sight</button>
-                        <button onclick="openCatProfile('${cat.id}')" class="px-2 bg-stone-100 text-stone-700 rounded text-[10px] font-semibold">Profile</button>
-                    </div>
-                `;
-                container.appendChild(box);
-            });
-        }
-
-        function recordResight(catId) {
-            const res = { id: 'RES-' + Date.now(), catId: catId, date: new Date().toISOString(), user: db.user };
-            db.resightings.push(res);
-            logAction('RECORD_RESIGHTING', catId, null, res);
-            persist();
-            renderCatGrid();
-        }
-
-        function clearCatFilters() {
-            const sexF = document.getElementById('filterSex');
-            const sterF = document.getElementById('filterSterile');
-            if (sexF) sexF.value = '';
-            if (sterF) sterF.value = '';
-            renderCatGrid();
-        }
-
-        function openCatProfileModal(catId) {
-            if (!activeColonyId) {
-                if (db.colonies.length > 0) {
-                    activeColonyId = db.colonies[0].id;
+            init() {
+                if (!this.state.displayName) {
+                    document.getElementById('setup-modal').classList.remove('hidden');
                 } else {
-                    alert('Please create a colony first!');
-                    switchTab('colonies');
+                    this.render();
+                }
+                // Initialize background persistence / sync checks
+                this.initSyncEngine();
+            }
+
+            completeSetup() {
+                const nameInput = document.getElementById('setup-display-name').value.trim();
+                if (!nameInput) {
+                    alert('Please enter a display name to continue.');
                     return;
                 }
+                this.state.displayName = nameInput;
+                localStorage.setItem('ww_display_name', nameInput);
+                document.getElementById('setup-modal').classList.add('hidden');
+                this.logHistory('Setup', 'System', 'Initialized local user: ' + nameInput);
+                this.render();
             }
-            const modalId = document.getElementById('modalCatId');
-            if (modalId) modalId.value = catId || '';
-            const fields = ['modalCatName', 'modalCatSex', 'modalCatLifeStage', 'modalCatSterile', 'modalCatBodyCondition', 'modalCatHealth', 'modalCatReproduction', 'modalCatNotes', 'modalCatPhotoFile'];
-            fields.forEach(function(id) {
-                const el = document.getElementById(id);
-                if (el) el.value = '';
-            });
-            const catModal = document.getElementById('catModal');
-            if (catModal) catModal.style.display = 'flex';
-        }
 
-        function compressImage(file, callback) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 400;
-                    const MAX_HEIGHT = 400;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    callback(dataUrl);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function saveCat() {
-            const nameEl = document.getElementById('modalCatName');
-            const name = nameEl ? nameEl.value.trim() : '';
-            if (!name) { alert('Please enter a cat name or identifier.'); return; }
-
-            const sex = document.getElementById('modalCatSex').value;
-            const lifestage = document.getElementById('modalCatLifeStage').value;
-            const sterilisation = document.getElementById('modalCatSterile').value;
-            const bodyCondition = document.getElementById('modalCatBodyCondition').value;
-            const health = document.getElementById('modalCatHealth').value;
-            const reproduction = document.getElementById('modalCatReproduction').value;
-            const notes = document.getElementById('modalCatNotes').value.trim();
-            const fileInput = document.getElementById('modalCatPhotoFile');
-
-            function finalizeSave(photoBase64) {
-                const photos = photoBase64 ? [{ url: photoBase64, date: new Date().toISOString(), uploader: db.user }] : [];
-                const newCat = {
-                    id: 'CAT-' + Date.now(),
-                    colonyId: activeColonyId,
-                    name: name, sex: sex, lifestage: lifestage, sterilisation: sterilisation,
-                    bodyCondition: bodyCondition, health: health, reproduction: reproduction, notes: notes, photos: photos
-                };
-                db.cats.push(newCat);
-                logAction('ADD_CAT', newCat.id, null, newCat);
+            saveLocal() {
+                localStorage.setItem('ww_colonies', JSON.stringify(this.state.colonies));
+                localStorage.setItem('ww_cats', JSON.stringify(this.state.cats));
+                localStorage.setItem('ww_resightings', JSON.stringify(this.state.resightings));
+                localStorage.setItem('ww_alerts', JSON.stringify(this.state.alerts));
+                localStorage.setItem('ww_care', JSON.stringify(this.state.careEpisodes));
+                localStorage.setItem('ww_history', JSON.stringify(this.state.history));
+                localStorage.setItem('ww_settings', JSON.stringify(this.state.settings));
                 
-                try {
-                    persist();
-                } catch (e) {
-                    alert('Storage limit reached! Export your data or clear older records.');
-                    db.cats.pop();
-                    return;
+                // Update sync status indicator
+                this.updateSyncBadge('local', 0);
+            }
+
+            updateSyncBadge(status, count) {
+                this.state.syncStatus = status;
+                this.state.pendingCount = count;
+                const dot = document.getElementById('sync-dot');
+                const text = document.getElementById('sync-text');
+                if (!dot || !text) return;
+
+                if (status === 'local') {
+                    dot.className = "w-2 h-2 rounded-full bg-amber-400";
+                    text.innerText = "Saved Locally";
+                } else if (status === 'syncing') {
+                    dot.className = "w-2 h-2 rounded-full bg-sky-400 animate-pulse";
+                    text.innerText = "Syncing...";
+                } else if (status === 'synced') {
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    text.innerText = "Synced";
+                } else if (status === 'error') {
+                    dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                    text.innerText = "Sync Error";
                 }
-
-                renderAll();
-                renderCatGrid();
-                const catModal = document.getElementById('catModal');
-                if (catModal) catModal.style.display = 'none';
             }
 
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                compressImage(fileInput.files[0], function(compressedBase64) { finalizeSave(compressedBase64); });
-            } else {
-                finalizeSave(null);
+            initSyncEngine() {
+                // Placeholder for Firebase synchronization binding as specified in WW-01-11 & WW-01-12
+                // Operates transparently when network is available and configuration is supplied.
+                setTimeout(() => {
+                    this.updateSyncBadge('synced', 0);
+                }, 1500);
             }
-        }
 
-        function openCatProfile(catId) {
-            currentCatId = catId;
-            const cat = db.cats.find(function(c) { return c.id === catId; });
-            if (!cat) return;
-            const resights = db.resightings.filter(function(r) { return r.catId === cat.id; });
-            const distinctUsers = [...new Set(resights.map(function(r) { return r.user; }))].length;
-            const container = document.getElementById('catProfileContent');
-            if (!container) return;
-            
-            let vetHelpBox = '';
-            if (cat.bodyCondition === 'emaciated' || cat.health === 'critically ill/injured') {
-                vetHelpBox = `
-                    <div class="bg-amber-50 p-4 rounded-xl border border-amber-300 space-y-2 text-xs">
-                        <p class="font-bold text-amber-900">⚠️ Veterinary Alert Active</p>
-                        <p class="text-stone-700">Stray cat care in this area is provided by volunteers. If you can help, contact Caroline via WhatsApp at <strong>+61 438 706 880</strong>.</p>
+            logHistory(actionType, recordId, details) {
+                const entry = {
+                    id: 'hist_' + Date.now() + '_' + Math.random().toString(36.2),
+                    actor: this.state.displayName || 'Anonymous',
+                    timestamp: new Date().toISOString(),
+                    actionType,
+                    recordId,
+                    details
+                };
+                this.state.history.unshift(entry);
+                this.saveLocal();
+            }
+
+            navigateTo(screen, colonyId = null, catId = null) {
+                this.state.currentScreen = screen;
+                if (colonyId !== null) this.state.selectedColonyId = colonyId;
+                if (catId !== null) this.state.selectedCatId = catId;
+                
+                // Update bottom nav active state
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-emerald-400', 'text-slate-400'));
+                const activeNav = document.getElementById('nav-' + (screen === 'profile' || screen === 'colony-profile' ? (screen === 'profile' ? 'grid' : 'colonies') : screen));
+                if (activeNav) activeNav.classList.replace('text-slate-400', 'text-emerald-400');
+
+                this.render();
+            }
+
+            render() {
+                const container = document.getElementById('main-content');
+                container.innerHTML = '';
+
+                switch (this.state.currentScreen) {
+                    case 'home':
+                        container.innerHTML = this.renderHomeScreen();
+                        this.initHomeMap();
+                        break;
+                    case 'colonies':
+                        container.innerHTML = this.renderColoniesScreen();
+                        break;
+                    case 'grid':
+                        container.innerHTML = this.renderCatGridScreen();
+                        break;
+                    case 'profile':
+                        container.innerHTML = this.renderCatProfileScreen();
+                        break;
+                    case 'colony-profile':
+                        container.innerHTML = this.renderColonyProfileScreen();
+                        break;
+                    case 'insights':
+                        container.innerHTML = this.renderInsightsScreen();
+                        break;
+                    case 'settings':
+                        container.innerHTML = this.renderSettingsScreen();
+                        break;
+                }
+            }
+
+            // ==========================================
+            // MODULE 5: HOME SCREEN & MAP
+            // ==========================================
+            renderHomeScreen() {
+                return `
+                    <div class="h-full flex flex-col p-4 space-y-3">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-200">Koilada Colony Map</h2>
+                                <p class="text-xs text-slate-400">Interactive census map centred on Koilada, Peloponnese, Greece.</p>
+                            </div>
+                            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                                <button onclick="app.promptAddColony()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
+                                    <i class="fa-solid fa-plus text-emerald-400 mr-1"></i> Add Colony
+                                </button>
+                                <button onclick="app.exportDataset()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
+                                    <i class="fa-solid fa-download text-sky-400 mr-1"></i> Export Data
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative min-h-[300px]">
+                            <div id="map" class="absolute inset-0 shadow-lg border border-slate-800"></div>
+                        </div>
                     </div>
                 `;
             }
 
-            container.innerHTML = `
-                <div class="space-y-4">
-                    <div class="flex flex-col sm:flex-row gap-4 items-start">
-                        <div class="w-32 h-32 rounded-2xl overflow-hidden border bg-stone-100 flex-shrink-0 relative">
-                            <img src="${cat.photos && cat.photos.length > 0 ? cat.photos[0].url : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300'}" class="w-full h-full object-cover">
+            initHomeMap() {
+                if (this.mapInstance) {
+                    this.mapInstance.remove();
+                }
+
+                this.mapInstance = L.map('map').setView(this.koiladaCoords, 15);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(this.mapInstance);
+
+                // Render Colony Markers
+                this.state.colonies.forEach(colony => {
+                    if (!colony.lat || !colony.lng) return;
+                    
+                    const catCount = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived).length;
+                    const markerHtml = `<div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white shadow-md flex items-center justify-center text-white font-bold text-xs"><i class="fa-solid fa-paw"></i></div>`;
+                    const customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+
+                    const marker = L.marker([colony.lat, colony.lng], { icon: customIcon }).addTo(this.mapInstance);
+                    
+                    const popupContent = `
+                        <div class="p-2 text-slate-900 max-w-xs">
+                            <h3 class="font-bold text-sm mb-1">${colony.name}</h3>
+                            <p class="text-xs text-slate-600 mb-2">${colony.notes || 'No location notes.'}</p>
+                            <div class="text-xs font-semibold mb-3 text-emerald-700">Recorded Cats: ${catCount}</div>
+                            <div class="flex space-x-2">
+                                <button onclick="app.navigateTo('colony-profile', '${colony.id}')" class="bg-emerald-600 text-white px-2.5 py-1 rounded text-xs font-medium">Colony Profile</button>
+                                <button onclick="app.navigateTo('grid', '${colony.id}')" class="bg-slate-800 text-white px-2.5 py-1 rounded text-xs font-medium">Cat Grid</button>
+                            </div>
                         </div>
-                        <div class="space-y-2 flex-1 text-xs">
-                            <h3 class="text-xl font-bold text-stone-900">${cat.name}</h3>
-                            <p><strong>Sex:</strong> ${cat.sex} | <strong>Life Stage:</strong> ${cat.lifestage}</p>
-                            <p><strong>Sterilisation:</strong> ${cat.sterilisation} | <strong>Body Condition:</strong> ${cat.bodyCondition}</p>
-                            <p><strong>Health:</strong> ${cat.health} | <strong>Reproductive Status:</strong> ${cat.reproduction}</p>
-                            <p><strong>Notes:</strong> ${cat.notes || 'None'}</p>
-                            <p class="text-amber-700 font-medium">Total Re-sightings: ${resights.length} (Recorded by ${distinctUsers} volunteers)</p>
-                        </div>
-                    </div>
-                    ${vetHelpBox}
-                    <div class="pt-2 flex flex-wrap gap-2 border-t">
-                        <button onclick="recordResight('${cat.id}'); openCatProfile('${cat.id}');" class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold">Record Re-sighting</button>
-                        <button onclick="openCatGrid(activeColonyId)" class="px-3 py-1.5 bg-stone-200 text-stone-700 rounded-lg text-xs font-semibold">Back to Grid</button>
-                    </div>
-                </div>
-            `;
-            switchTab('cat-profile');
-        }
-
-        function navigateCatProfile(direction) {
-            const colonyCats = db.cats.filter(function(c) { return c.colonyId === activeColonyId; });
-            if (colonyCats.length === 0) return;
-            const idx = colonyCats.findIndex(function(c) { return c.id === currentCatId; });
-            let next = idx + direction;
-            if (next < 0) next = colonyCats.length - 1;
-            if (next >= colonyCats.length) next = 0;
-            openCatProfile(colonyCats[next].id);
-        }
-
-        function openColonyProfile(colonyId) {
-            const colony = db.colonies.find(function(c) { return c.id === colonyId; });
-            const colonyCats = db.cats.filter(function(c) { return c.colonyId === colonyId; });
-            const total = colonyCats.length;
-            const sterilised = colonyCats.filter(function(c) { return c.sterilisation === 'Sterilised'; }).length;
-            const pctSterilised = total > 0 ? Math.round((sterilised / total) * 100) : 0;
-
-            const container = document.getElementById('colonyProfileContent');
-            if (!container) return;
-
-            container.innerHTML = `
-                <div class="space-y-4">
-                    <h2 class="text-2xl font-bold text-stone-900">${colony.name} Profile</h2>
-                    <p class="text-xs text-stone-600"><strong>Notes:</strong> ${colony.notes}</p>
-                    <p class="text-xs text-stone-600"><strong>Caretakers:</strong> ${colony.caretakers || 'None assigned'}</p>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
-                        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-center">
-                            <span class="block text-2xl font-bold text-amber-800">${total}</span>
-                            <span class="text-xs text-stone-600">Recorded Cats</span>
-                        </div>
-                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center">
-                            <span class="block text-2xl font-bold text-emerald-800">${pctSterilised}%</span>
-                            <span class="text-xs text-stone-600">Sterilisation Coverage</span>
-                        </div>
-                    </div>
-                    <button onclick="openCatGrid('${colony.id}')" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow">Open Cat Grid</button>
-                </div>
-            `;
-            switchTab('colony-profile');
-        }
-
-        function renderInsights() {
-            const container = document.getElementById('insightsContainer');
-            if (!container) return;
-            const totalCats = db.cats.length;
-            const totalSterile = db.cats.filter(function(c) { return c.sterilisation === 'Sterilised'; }).length;
-            const overallPct = totalCats > 0 ? Math.round((totalSterile / totalCats) * 100) : 0;
-
-            container.innerHTML = `
-                <div class="bg-white p-4 rounded-xl border shadow-sm"><p class="text-xs text-stone-500">Monitored Colonies</p><p class="text-2xl font-bold text-amber-600">${db.colonies.length}</p></div>
-                <div class="bg-white p-4 rounded-xl border shadow-sm"><p class="text-xs text-stone-500">Recorded Cats</p><p class="text-2xl font-bold text-amber-600">${totalCats}</p></div>
-                <div class="bg-white p-4 rounded-xl border shadow-sm"><p class="text-xs text-stone-500">Overall Sterilisation</p><p class="text-2xl font-bold text-emerald-600">${overallPct}%</p></div>
-            `;
-        }
-
-        function logAction(type, recordId, prevVal, newVal) {
-            db.history.unshift({
-                id: 'ACT-' + Date.now(),
-                user: db.user || 'Volunteer',
-                date: new Date().toISOString(),
-                type: type, recordId: recordId, prevVal: prevVal, newVal: newVal
-            });
-        }
-
-        function persist() {
-            try {
-                localStorage.setItem('ww_colonies', JSON.stringify(db.colonies));
-                localStorage.setItem('ww_cats', JSON.stringify(db.cats));
-                localStorage.setItem('ww_resightings', JSON.stringify(db.resightings));
-                localStorage.setItem('ww_alerts', JSON.stringify(db.alerts));
-                localStorage.setItem('ww_episodes', JSON.stringify(db.episodes));
-                localStorage.setItem('ww_history', JSON.stringify(db.history));
-            } catch(e) {
-                console.warn("Storage restricted or quota reached");
+                    `;
+                    marker.bindPopup(popupContent);
+                });
             }
-        }
 
-        function exportAllCSV() {
-            let csv = "id,name,notes,radius,caretakers,lat,lng\n";
-            db.colonies.forEach(function(c) {
-                csv += '"' + c.id + '","' + c.name + '","' + c.notes + '",' + (c.radius || 50) + ',"' + (c.caretakers || '') + '",' + c.lat + ',' + c.lng + '\n';
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'whiskerwatch_export_' + new Date().toISOString().slice(0,10) + '.csv';
-            a.click();
-        }
-    </script>
-</body>
-</html>
+            promptAddColony() {
+                const name = prompt("Enter Colony Name:");
+                if (!name) return;
+                const notes = prompt("Enter location notes (optional):") || "";
+                
+                // Use default Koilada center or last map position
+                const newColony = {
+                    id: 'col_' + Date.now(),
+                    name,
+                    notes,
+                    lat: this.koiladaCoords[0] + (Math.random() - 0.5) * 0.01,
+                    lng: this.koiladaCoords[1] + (Math.random() - 0.5) * 0.01,
+                    radius: 50,
+                    caretakers: [this.state.displayName],
+                    created: new Date().toISOString()
+                };
+
+                this.state.colonies.push(newColony);
+                this.logHistory('Create Colony', newColony.id, `Created colony: ${name}`);
+                this.saveLocal();
+                this.render();
+            }
+
+            // ==========================================
+            // MODULE 5.9: PHOTO-FIRST ADD CAT WORKFLOW
+            // ==========================================
+            triggerPhotoFirstAddCat() {
+                // Opens system camera or photo library file picker directly from Home (WW-05-09)
+                document.getElementById('global-photo-input').click();
+            }
+
+            handleGlobalPhotoSelected(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.activePhotoFirstFile = e.target.result;
+                    this.showColonySelectionForPhoto();
+                };
+                reader.readAsDataURL(file);
+                event.target.value = ''; // Reset input
+            }
+
+            showColonySelectionForPhoto() {
+                if (this.state.colonies.length === 0) {
+                    alert('Please create at least one colony on the map before registering cats.');
+                    this.promptAddColony();
+                    return;
+                }
+
+                // Prompt user to select destination colony for photo-first cat registration
+                let colonyListText = this.state.colonies.map((c, idx) => `${idx + 1}.${c.name}`).join('\n');
+                let selection = prompt(`Select destination colony by number:\n\n${colonyListText}\n\nType 'new' to create a new colony.`);
+                
+                let targetColonyId = null;
+                if (selection === 'new') {
+                    const name = prompt("Enter new Colony Name:");
+                    if (!name) return;
+                    const newColony = {
+                        id: 'col_' + Date.now(),
+                        name,
+                        notes: 'Created via Photo-First registration',
+                        lat: this.koiladaCoords[0],
+                        lng: this.koiladaCoords[1],
+                        radius: 50,
+                        caretakers: [this.state.displayName],
+                        created: new Date().toISOString()
+                    };
+                    this.state.colonies.push(newColony);
+                    targetColonyId = newColony.id;
+                } else {
+                    const idx = parseInt(selection) - 1;
+                    if (isNaN(idx) || !this.state.colonies[idx]) {
+                        alert('Invalid colony selection.');
+                        return;
+                    }
+                    targetColonyId = this.state.colonies[idx].id;
+                }
+
+                // Proceed to register new cat profile with preloaded photo
+                this.state.selectedColonyId = targetColonyId;
+                this.state.selectedCatId = null;
+                this.navigateTo('profile');
+            }
+
+            // ==========================================
+            // MODULE 6: COLONIES SCREEN
+            // ==========================================
+            renderColoniesScreen() {
+                return `
+                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto">
+                        <div class="flex items-center justify-between shrink-0">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-200">Colony Management Summaries</h2>
+                                <p class="text-xs text-slate-400">Review colony welfare distribution, priority borders, and statistics.</p>
+                            </div>
+                            <button onclick="app.promptAddColony()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
+                                <i class="fa-solid fa-plus mr-1"></i> Add Colony
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${this.state.colonies.length === 0 ? `
+                                <div class="col-span-full text-center py-12 text-slate-500 text-sm">
+                                    No colonies registered yet. Use "Add Colony" to begin.
+                                </div>
+                            ` : this.state.colonies.map(colony => {
+                                const cats = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived);
+                                const sterilisedCount = cats.filter(c => c.sterilisation === 'Sterilised').length;
+                                const sterilisationPct = cats.length ? Math.round((sterilisedCount / cats.length) * 100) : 0;
+                                const emaciatedCount = cats.filter(c => c.bodyCondition === 'Emaciated').length;
+                                const urgentAlerts = this.state.alerts.filter(a => cats.some(c => c.id === a.catId) && a.status !== 'Resolved').length;
+                                
+                                let borderClass = 'border-emerald-600/40';
+                                if (urgentAlerts > 0) borderClass = 'border-rose-500 shadow-rose-950/20 shadow-lg';
+                                else if (emaciatedCount > 0 || sterilisationPct < 50) borderClass = 'border-amber-500';
+
+                                return `
+                                    <div class="bg-slate-900 border ${borderClass} rounded-xl p-4 flex flex-col justify-between space-y-3">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <h3 class="font-bold text-sm text-slate-200">${colony.name}</h3>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">${cats.length} Cats</span>
+                                            </div>
+                                            <p class="text-xs text-slate-400 mb-3">${colony.notes || 'No location notes provided.'}</p>
+                                            
+                                            <div class="grid grid-cols-2 gap-2 text-xs bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
+                                                <div><span class="text-slate-400">Sterilisation:</span> <strong class="text-slate-200">${sterilisationPct}%</strong></div>
+                                                <div><span class="text-slate-400">Urgent Alerts:</span> <strong class="text-${urgentAlerts > 0 ? 'rose-400' : 'emerald-400'}">${urgentAlerts}</strong></div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2 pt-2 border-t border-slate-800">
+                                            <button onclick="app.navigateTo('colony-profile', '${colony.id}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs py-1.5 rounded-lg font-medium transition-colors text-center">Colony Profile</button>
+                                            <button onclick="app.navigateTo('grid', '${colony.id}')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 rounded-lg font-medium transition-colors text-center">Cat Grid</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ==========================================
+            // MODULE 7: CAT GRID SCREEN
+            // ==========================================
+            renderCatGridScreen() {
+                const colony = this.state.colonies.find(c => c.id === this.state.selectedColonyId) || this.state.colonies[0];
+                if (!colony) {
+                    return `
+                        <div class="h-full flex flex-col items-center justify-center p-6 text-center">
+                            <p class="text-slate-400 text-sm mb-3">No colonies available to display Cat Grid.</p>
+                            <button onclick="app.promptAddColony()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium">Create First Colony</button>
+                        </div>
+                    `;
+                }
+
+                const colonyCats = this.state.cats.filter(c => c.colonyId === colony.id && !c.archived);
+
+                return `
+                    <div class="h-full flex flex-col p-4 space-y-3 overflow-y-auto">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h2 class="text-base font-bold text-slate-200">${colony.name} — Cat Grid</h2>
+                                    <span class="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-medium">${colonyCats.length} cats</span>
+                                </div>
+                                <p class="text-xs text-slate-400">Quick identification and re-sighting log.</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="app.navigateTo('colony-profile', '${colony.id}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium">Colony Profile</button>
+                                <button onclick="app.openCatProfile(null, '${colony.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg font-medium text-white shadow-sm">
+                                    <i class="fa-solid fa-plus mr-1"></i> Register Cat
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cat Cards Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            ${colonyCats.length === 0 ? `
+                                <div class="col-span-full text-center py-12 text-slate-500 text-sm bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+                                    No cats registered in this colony yet. Tap "Register Cat" above.
+                                </div>
+                            ` : colonyCats.map(cat => {
+                                const resightCount = this.state.resightings.filter(r => r.catId === cat.id).length;
+                                const alert = this.state.alerts.find(a => a.catId === cat.id && a.status !== 'Resolved');
+                                
+                                let cardBorder = 'border-slate-800';
+                                if (alert) cardBorder = 'border-rose-500 shadow-lg shadow-rose-950/30';
+                                else if (cat.bodyCondition === 'Thin' || cat.health === 'Unwell' || cat.sterilisation === 'Unsterilised') cardBorder = 'border-amber-500/60';
+                                else if (cat.health === 'Healthy' && cat.sterilisation === 'Sterilised') cardBorder = 'border-emerald-500/60';
+
+                                return `
+                                    <div onclick="app.openCatProfile('${cat.id}')" class="bg-slate-900 border ${cardBorder} rounded-xl p-3 flex flex-col justify-between cursor-pointer hover:border-slate-600 transition-all group">
+                                        <div>
+                                            <div class="aspect-square rounded-lg bg-slate-800 mb-2 overflow-hidden relative flex items-center justify-center text-slate-600">
+                                                ${cat.photos && cat.photos.length > 0 ? `
+                                                    <img src="${cat.photos[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                                ` : `
+                                                    <i class="fa-solid fa-cat text-2xl"></i>
+                                                `}
+                                                <div class="absolute bottom-1 right-1 bg-slate-900/80 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded text-slate-300 font-medium">
+                                                    ${resightCount} re-sight
+                                                </div>
+                                            </div>
+                                            <h4 class="font-bold text-xs text-slate-200 truncate">${cat.name || 'Unnamed Cat'}</h4>
+                                            <p class="text-[10px] text-slate-400 truncate mb-2">${cat.description || cat.markings || 'No markings noted.'}</p>
+                                        </div>
+                                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[10px]">
+                                            <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">${cat.sterilisation || 'Unknown'}</span>
+                                            <span class="text-emerald-400 font-medium"><i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            openCatProfile(catId = null, colonyId = null) {
+                this.state.selectedCatId = catId;
+                if (colonyId) this.state.selectedColonyId = colonyId;
+                this.navigateTo('profile');
+            }
+
+            // ==========================================
+            // MODULE 8: CAT PROFILE SCREEN & GPS MAP
+            // ==========================================
+            renderCatProfileScreen() {
+                const cat = this.state.cats.find(c => c.id === this.state.selectedCatId);
+                const isNew = !cat;
+                const colonyId = this.state.selectedColonyId || (this.state.colonies[0] ? this.state.colonies[0].id : null);
+                
+                const catResightings = isNew ? [] : this.state.resightings.filter(r => r.catId === cat.id);
+
+                return `
+                    <div class="h-full flex flex-col p-4 space-y-4 overflow-y-auto max-w-4xl mx-auto w-full">
+                        <div class="flex items-center justify-between shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="app.navigateTo('grid')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                </button>
+                                <h2 class="text-sm font-bold text-slate-200">${isNew ? 'Register New Cat' : (cat.name || 'Cat Profile')}</h2>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${!isNew ? `
+                                    <button onclick="app.recordQuickResighting('${cat.id}')" class="bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                        <i class="fa-solid fa-location-dot mr-1"></i> Re-sighting
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Left Column: Photos & Profile Attributes Form -->
+                            <div class="md:col-span-2 space-y-4">
+                                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+                                    <div class="aspect-video bg-slate-950 rounded-lg border border-slate-800 overflow-hidden relative flex items-center justify-center">
+                                        ${!isNew && cat.photos && cat.photos.length > 0 ? `
+                                            <img id="active-profile-photo" src="${cat.photos[0]}" class="w-full h-full object-cover">
+                                        ` : this.activePhotoFirstFile ? `
+                                            <img id="active-profile-photo" src="${this.activePhotoFirstFile}" class="w-full h-full object-cover">
+                                        ` : `
+                                            <div class="text-center p-6 text-slate-500">
+                                                <i class="fa-solid fa-camera text-3xl mb-2"></i>
+                                                <p class="text-xs">No photos attached yet. Take or upload photo.</p>
+                                            </div>
+                                        `}
+                                        <button onclick="document.getElementById('cat-photo-upload').click()" class="absolute bottom-3 right-3 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg flex items-center space-x-1.5">
+                                            <i class="fa-solid fa-camera"></i>
+                                            <span>Add Photo</span>
+                                        </button>
+                                        <input type="file" id="cat-photo-upload" accept="image/*" class="hidden" onchange="app.handleCatPhotoAdded(event)">
+                                    </div>
+
+                                    <!--

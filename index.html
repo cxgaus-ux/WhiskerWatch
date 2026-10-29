@@ -87,6 +87,17 @@ Add Colony
 Export Data
 </button>
 
+<button id="importBtn">
+Import Data
+</button>
+
+<input
+    type="file"
+    id="importFile"
+    accept=".json"
+    style="display:none;"
+>
+
 <button id="clearBtn">
 Clear Test Data
 </button>
@@ -244,6 +255,23 @@ addingColony = false;
 });
 
 document
+.getElementById("importBtn")
+.addEventListener("click",()=>{
+
+    document
+        .getElementById("importFile")
+        .click();
+
+});
+
+document
+.getElementById("importFile")
+.addEventListener(
+    "change",
+    importData
+);
+
+document
 .getElementById("clearBtn")
 .addEventListener("click",()=>{
 
@@ -324,11 +352,62 @@ function exportData(){
     link.href = url;
 
     link.download =
-        "whiskerwatch-colonies.json";
+        "whiskerwatch-backup-2026-10-28.json";
 
     link.click();
 
     URL.revokeObjectURL(url);
+
+}
+
+function importData(event){
+
+    const file =
+        event.target.files[0];
+
+    if(!file){
+        return;
+    }
+
+    const reader =
+        new FileReader();
+
+    reader.onload = function(e){
+
+        try{
+
+            const importedData =
+                JSON.parse(
+                    e.target.result
+                );
+
+            if(
+                !confirm(
+                    "Replace current colonies with imported data?"
+                )
+            ){
+                return;
+            }
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(importedData)
+            );
+
+            location.reload();
+
+        }
+        catch(error){
+
+            alert(
+                "Invalid backup file."
+            );
+
+        }
+
+    };
+
+    reader.readAsText(file);
 
 }
 

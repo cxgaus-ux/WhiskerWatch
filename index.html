@@ -247,25 +247,6 @@ map.on("click", e=>{
         "Location notes?"
     ) || "";
 
-const notes =
-    prompt(
-        "Notes?"
-    ) || "";
-
-const sex =
-    prompt(
-        "Sex (male/female/unknown)?"
-    ) || "unknown";
-
-const lifeStage =
-    prompt(
-        "Life stage (kitten/juvenile/adult/senior)?"
-    ) || "adult";
-
-const sterilisation =
-    prompt(
-        "Sterilised? (yes/no/unknown)"
-    ) || "unknown";
 
     const colony = {
 
@@ -622,10 +603,30 @@ function addCat(colonyId){
         return;
     }
 
-    const description =
-        prompt(
-            "Description?"
-        ) || "";
+   const description =
+    prompt(
+        "Description?"
+    ) || "";
+
+const notes =
+    prompt(
+        "Notes?"
+    ) || "";
+
+const sex =
+    prompt(
+        "Sex (male/female/unknown)?"
+    ) || "unknown";
+
+const lifeStage =
+    prompt(
+        "Life stage (kitten/juvenile/adult/senior)?"
+    ) || "unknown";
+
+const sterilisation =
+    prompt(
+        "Sterilisation (sterilised/unsterilised/unknown)?"
+    ) || "unknown";
 
     const cats =
         JSON.parse(
@@ -635,30 +636,23 @@ function addCat(colonyId){
             || "[]"
         );
 
-   cats.push({
+  cats.push({
 
     id: Date.now(),
 
-    colonyId:
-        colonyId,
+    colonyId: colonyId,
 
-    name:
-        name,
+    name: name,
 
-    description:
-        description,
+    description: description,
 
-    notes:
-        notes,
+    notes: notes,
 
-    sex:
-        sex,
+    sex: sex,
 
-    lifeStage:
-        lifeStage,
+    lifeStage: lifeStage,
 
-    sterilisation:
-        sterilisation
+    sterilisation: sterilisation
 
 });
 

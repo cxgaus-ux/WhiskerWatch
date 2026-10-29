@@ -247,6 +247,26 @@ map.on("click", e=>{
         "Location notes?"
     ) || "";
 
+const notes =
+    prompt(
+        "Notes?"
+    ) || "";
+
+const sex =
+    prompt(
+        "Sex (male/female/unknown)?"
+    ) || "unknown";
+
+const lifeStage =
+    prompt(
+        "Life stage (kitten/juvenile/adult/senior)?"
+    ) || "adult";
+
+const sterilisation =
+    prompt(
+        "Sterilised? (yes/no/unknown)"
+    ) || "unknown";
+
     const colony = {
 
     id:Date.now(),
@@ -561,12 +581,31 @@ function openColony(colonyId){
         <div>
             ${colonyCats.map(cat => `
                 <div class="cat-card">
-                    <strong>
-                        ${cat.name}
-                    </strong>
-                    <br>
-                    ${cat.description || ""}
-                </div>
+
+    <strong>
+        ${cat.name}
+    </strong>
+
+    <br>
+
+    ${cat.description || ""}
+
+    <br>
+
+    Sex:
+    ${cat.sex}
+
+    <br>
+
+    Life Stage:
+    ${cat.lifeStage}
+
+    <br>
+
+    Sterilised:
+    ${cat.sterilisation}
+
+</div>
             `).join("")}
         </div>
     `;
@@ -596,20 +635,32 @@ function addCat(colonyId){
             || "[]"
         );
 
-    cats.push({
+   cats.push({
 
-        id: Date.now(),
+    id: Date.now(),
 
-        colonyId:
-            colonyId,
+    colonyId:
+        colonyId,
 
-        name:
-            name,
+    name:
+        name,
 
-        description:
-            description
+    description:
+        description,
 
-    });
+    notes:
+        notes,
+
+    sex:
+        sex,
+
+    lifeStage:
+        lifeStage,
+
+    sterilisation:
+        sterilisation
+
+});
 
     localStorage.setItem(
         CAT_STORAGE_KEY,

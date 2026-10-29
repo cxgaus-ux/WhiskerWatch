@@ -28,6 +28,21 @@ h1{
     margin:0;
 }
 
+#colonyDetail{
+    padding:15px;
+    margin:15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    background:white;
+}
+
+.cat-card{
+    padding:10px;
+    margin-top:8px;
+    border:1px solid #ddd;
+    border-radius:6px;
+}
+
 #controls{
     padding:10px;
     background:#f2f2f2;
@@ -114,11 +129,15 @@ Clear Test Data
 
 </div>
 
+<div id="colonyDetail"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
 const STORAGE_KEY = "whiskerwatch_colonies";
+
+const CAT_STORAGE_KEY = "whiskerwatch_cats";
 
 let addingColony = false;
 
@@ -322,7 +341,11 @@ function renderColonyList(){
       ${colony.radius || 50}m
     </p>
 
-   <button onclick="editColony(${colony.id})">
+  <button onclick="openColony(${colony.id})">
+    Open
+</button>
+
+<button onclick="editColony(${colony.id})">
     Edit
 </button>
 
@@ -491,6 +514,109 @@ function deleteColony(id){
     );
 
     location.reload();
+
+}
+
+function openColony(colonyId){
+
+    const colonies =
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        );
+
+    const cats =
+        JSON.parse(
+            localStorage.getItem(CAT_STORAGE_KEY)
+            || "[]"
+        );
+
+    const colony =
+        colonies.find(
+            c => c.id === colonyId
+        );
+
+    const colonyCats =
+        cats.filter(
+            c => c.colonyId === colonyId
+        );
+
+    document
+    .getElementById("colonyDetail")
+    .innerHTML = `
+        <h2>${colony.name}</h2>
+
+        <p>${colony.notes || ""}</p>
+
+        <p>
+            Cats:
+            ${colonyCats.length}
+        </p>
+
+        <button
+            onclick="addCat(${colonyId})">
+            Add Cat
+        </button>
+
+        <div>
+            ${colonyCats.map(cat => `
+                <div class="cat-card">
+                    <strong>
+                        ${cat.name}
+                    </strong>
+                    <br>
+                    ${cat.description || ""}
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+function addCat(colonyId){
+
+    const name =
+        prompt(
+            "Cat name?"
+        );
+
+    if(!name){
+        return;
+    }
+
+    const description =
+        prompt(
+            "Description?"
+        ) || "";
+
+    const cats =
+        JSON.parse(
+            localStorage.getItem(
+                CAT_STORAGE_KEY
+            )
+            || "[]"
+        );
+
+    cats.push({
+
+        id: Date.now(),
+
+        colonyId:
+            colonyId,
+
+        name:
+            name,
+
+        description:
+            description
+
+    });
+
+    localStorage.setItem(
+        CAT_STORAGE_KEY,
+        JSON.stringify(cats)
+    );
+
+    openColony(colonyId);
 
 }
 

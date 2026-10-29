@@ -322,9 +322,13 @@ function renderColonyList(){
       ${colony.radius || 50}m
     </p>
 
-    <button onclick="deleteColony(${colony.id})">
-        Delete Colony
-    </button>
+   <button onclick="editColony(${colony.id})">
+    Edit
+</button>
+
+<button onclick="deleteColony(${colony.id})">
+    Delete Colony
+</button>
 `;
 
         colonyList.appendChild(card);
@@ -412,6 +416,51 @@ function importData(event){
     };
 
     reader.readAsText(file);
+
+}
+
+function editColony(id){
+
+    const colonies =
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        );
+
+    const colony =
+        colonies.find(
+            c => c.id === id
+        );
+
+    if(!colony){
+        return;
+    }
+
+    const newName =
+        prompt(
+            "Colony name:",
+            colony.name
+        );
+
+    if(!newName){
+        return;
+    }
+
+    const newNotes =
+        prompt(
+            "Location notes:",
+            colony.notes
+        ) || "";
+
+    colony.name = newName;
+    colony.notes = newNotes;
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(colonies)
+    );
+
+    location.reload();
 
 }
 

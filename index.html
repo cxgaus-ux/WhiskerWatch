@@ -312,16 +312,20 @@ function renderColonyList(){
         card.className =
             "colony-card";
 
-        card.innerHTML = `
-            <h3>${colony.name}</h3>
+       card.innerHTML = `
+    <h3>${colony.name}</h3>
 
-            <p>${colony.notes || ""}</p>
+    <p>${colony.notes || ""}</p>
 
-            <p>
-              Radius:
-              ${colony.radius || 50}m
-            </p>
-        `;
+    <p>
+      Radius:
+      ${colony.radius || 50}m
+    </p>
+
+    <button onclick="deleteColony(${colony.id})">
+        Delete Colony
+    </button>
+`;
 
         colonyList.appendChild(card);
 
@@ -408,6 +412,36 @@ function importData(event){
     };
 
     reader.readAsText(file);
+
+}
+
+function deleteColony(id){
+
+    if(
+        !confirm(
+            "Delete this colony?"
+        )
+    ){
+        return;
+    }
+
+    const colonies =
+        JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+            || "[]"
+        );
+
+    const updatedColonies =
+        colonies.filter(
+            colony => colony.id !== id
+        );
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updatedColonies)
+    );
+
+    location.reload();
 
 }
 

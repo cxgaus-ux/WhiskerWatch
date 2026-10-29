@@ -304,17 +304,9 @@ function renderColonyList(){
       ${colony.radius || 50}m
     </p>
 
-    <button onclick="openColony(${colony.id})">
-      Open
-    </button>
-
-    <button onclick="editColony(${colony.id})">
-      Edit
-    </button>
-
-    <button onclick="deleteColony(${colony.id})">
-      Delete
-    </button>
+   <button onclick="openColony(${colony.id})">
+  Open
+</button>
 `;
 
         colonyList.appendChild(card);
@@ -356,6 +348,11 @@ function exportData(){
 
 function openColony(id){
 
+    alert(
+        "Opening colony ID: " + id
+    );
+
+}
     const colonies =
         JSON.parse(
             localStorage.getItem(STORAGE_KEY)
